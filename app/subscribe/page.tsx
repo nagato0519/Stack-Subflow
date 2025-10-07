@@ -162,6 +162,12 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
       },
       requestPayerName: true,
       requestPayerEmail: true,
+      displayItems: [
+        {
+          label: plan.planName,
+          amount: amount,
+        },
+      ],
     })
 
     // Check if Apple Pay, Google Pay, etc. is available
@@ -479,9 +485,17 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
             <p className="text-sm text-gray-400 mb-2">
               Apple Pay は現在利用できません
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 mb-2">
               Stripe: {stripe ? '✓' : '✗'}, PaymentRequest: {paymentRequest ? '✓' : '✗'}, CanPay: {canMakePayment ? '✓' : '✗'}
             </p>
+            <div className="text-xs text-gray-600">
+              <p className="mb-1">Apple Payを有効にするには:</p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                <li>StripeダッシュボードでApple Payを有効化</li>
+                <li>ドメイン認証を完了 (eg-chatmate-ai.vercel.app)</li>
+                <li>Safariブラウザでアクセス</li>
+              </ul>
+            </div>
           </div>
         )}
       </div>
