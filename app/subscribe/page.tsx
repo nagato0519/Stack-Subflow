@@ -132,15 +132,26 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
   // Initialize Payment Request (Apple Pay, Google Pay, etc.)
   useEffect(() => {
     if (!stripe || !selectedPlan) {
+      console.log('Missing stripe or selectedPlan:', { stripe: !!stripe, selectedPlan })
       return
     }
 
     const plan = PLANS.find(p => p.planId === selectedPlan)
-    if (!plan) return
+    if (!plan) {
+      console.log('Plan not found for selectedPlan:', selectedPlan)
+      return
+    }
 
     // Extract amount from plan label (e.g., "¥980 / 月" -> 980)
     const amountMatch = plan.publicLabel.match(/¥([\d,]+)/)
     const amount = amountMatch ? parseInt(amountMatch[1].replace(/,/g, '')) : 1000
+
+    console.log('Creating Payment Request with:', {
+      country: 'JP',
+      currency: 'jpy',
+      amount,
+      label: plan.planName
+    })
 
     const pr = stripe.paymentRequest({
       country: 'JP',
@@ -155,10 +166,18 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
 
     // Check if Apple Pay, Google Pay, etc. is available
     pr.canMakePayment().then((result) => {
+      console.log('Payment Request canMakePayment result:', result)
       if (result) {
+        console.log('Apple Pay/Google Pay is available')
         setPaymentRequest(pr)
         setCanMakePayment(true)
+      } else {
+        console.log('Apple Pay/Google Pay is not available')
+        setCanMakePayment(false)
       }
+    }).catch((error) => {
+      console.error('Error checking payment availability:', error)
+      setCanMakePayment(false)
     })
 
     pr.on('paymentmethod', async (e) => {
@@ -417,38 +436,55 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Apple Pay / Google Pay Button */}
-      {canMakePayment && paymentRequest && (
-        <div className="payment-section">
-          <h3 className="section-title">クイック決済</h3>
-          {!acceptTerms && (
-            <p className="text-sm text-yellow-500 mb-2">
-              ⚠️ クイック決済を使用するには、下記の利用規約に同意してください
-            </p>
-          )}
-          <div className={`mb-4 ${!acceptTerms ? 'opacity-50 pointer-events-none' : ''}`}>
-            <PaymentRequestButtonElement 
-              options={{ 
-                paymentRequest,
-                style: {
-                  paymentRequestButton: {
-                    type: 'default',
-                    theme: 'dark',
-                    height: '48px',
-                  },
-                },
-              }} 
-            />
-          </div>
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-700"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-[rgb(var(--background))] text-muted-foreground">または</span>
-            </div>
-          </div>
+      <div className="payment-section">
+        <h3 className="section-title">クイック決済</h3>
+        
+        {/* Debug info - remove this in production */}
+        <div className="mb-2 p-2 bg-gray-800 rounded text-xs text-gray-400">
+          Debug: canMakePayment={String(canMakePayment)}, paymentRequest={String(!!paymentRequest)}, stripe={String(!!stripe)}
         </div>
-      )}
+        
+        {canMakePayment && paymentRequest ? (
+          <>
+            {!acceptTerms && (
+              <p className="text-sm text-yellow-500 mb-2">
+                ⚠️ クイック決済を使用するには、下記の利用規約に同意してください
+              </p>
+            )}
+            <div className={`mb-4 ${!acceptTerms ? 'opacity-50 pointer-events-none' : ''}`}>
+              <PaymentRequestButtonElement 
+                options={{ 
+                  paymentRequest,
+                  style: {
+                    paymentRequestButton: {
+                      type: 'default',
+                      theme: 'dark',
+                      height: '48px',
+                    },
+                  },
+                }} 
+              />
+            </div>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-700"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-[rgb(var(--background))] text-muted-foreground">または</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="mb-4 p-3 bg-gray-800 rounded">
+            <p className="text-sm text-gray-400 mb-2">
+              Apple Pay は現在利用できません
+            </p>
+            <p className="text-xs text-gray-500">
+              Stripe: {stripe ? '✓' : '✗'}, PaymentRequest: {paymentRequest ? '✓' : '✗'}, CanPay: {canMakePayment ? '✓' : '✗'}
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* CARD INFORMATION Section */}
       <div className="payment-section">
