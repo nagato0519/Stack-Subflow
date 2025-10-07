@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,7 +39,7 @@ export default function RootLayout({
         <AuthProvider>
           <div className="min-h-screen w-full" style={{ backgroundColor: 'var(--bg)', color: '#ffffff' }}>
             <header className="absolute top-0 left-0 p-4 z-10">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-3">
                 <Image 
                   src="/ChatMateIcon.png" 
                   alt="ChatMate Logo" 

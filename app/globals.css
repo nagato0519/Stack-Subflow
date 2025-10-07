@@ -306,11 +306,12 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: var(--radius) !important;
   padding: 0.75rem 1rem !important;
-  min-height: 2.75rem !important;
+  height: 2.75rem !important;
   transition: all 0.2s !important;
   display: flex !important;
   align-items: center !important;
   position: relative !important;
+  box-sizing: border-box !important;
 }
 
 .card-element-container:focus-within {
@@ -371,25 +372,7 @@ html, body {
   outline: none !important;
 }
 
-/* Force the container background to be visible */
-.card-element-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.card-element-container:focus-within::before {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--accent);
-}
+/* Remove the pseudo-element that was causing double height */
 
 .card-element-container .StripeElement .p-Input {
   background: transparent !important;
@@ -535,6 +518,7 @@ html, body {
   padding: 0 !important;
   margin: 0 !important;
 }
+
 
 /* Phone Input Styles */
 .phone-input-container {

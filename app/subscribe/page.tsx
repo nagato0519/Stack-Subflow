@@ -6,7 +6,7 @@ import { ClientOnly } from "@/components/client-only"
 import { authService } from "@/lib/auth"
 import { auth } from "@/lib/firebase"
 import { loadStripe } from "@stripe/stripe-js"
-import { Elements, CardElement, useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js"
+import { Elements, CardElement, useStripe, useElements, PaymentRequestButtonElement } from "@stripe/react-stripe-js"
 
 // Initialize Stripe with publishable key
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -72,6 +72,7 @@ function PaymentForm({ selectedPlan, tenant, email }: { selectedPlan: string, te
     <Elements 
       stripe={stripePromise} 
       options={{ 
+        locale: 'en',
         appearance: {
           theme: 'stripe',
           variables: {
@@ -119,12 +120,147 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
   const [email, setEmail] = useState(initialEmail)
   const [fullName, setFullName] = useState("")
   const [cardHolderName, setCardHolderName] = useState("")
+  const [paymentRequest, setPaymentRequest] = useState<any>(null)
+  const [canMakePayment, setCanMakePayment] = useState(false)
 
   // Update email state when initialEmail prop changes
   useEffect(() => {
     console.log("[CheckoutForm] Email prop changed to:", initialEmail)
     setEmail(initialEmail)
   }, [initialEmail])
+
+  // Initialize Payment Request (Apple Pay, Google Pay, etc.)
+  useEffect(() => {
+    if (!stripe || !selectedPlan) {
+      return
+    }
+
+    const plan = PLANS.find(p => p.planId === selectedPlan)
+    if (!plan) return
+
+    // Extract amount from plan label (e.g., "¥980 / 月" -> 980)
+    const amountMatch = plan.publicLabel.match(/¥([\d,]+)/)
+    const amount = amountMatch ? parseInt(amountMatch[1].replace(/,/g, '')) : 1000
+
+    const pr = stripe.paymentRequest({
+      country: 'JP',
+      currency: 'jpy',
+      total: {
+        label: plan.planName,
+        amount: amount,
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    })
+
+    // Check if Apple Pay, Google Pay, etc. is available
+    pr.canMakePayment().then((result) => {
+      if (result) {
+        setPaymentRequest(pr)
+        setCanMakePayment(true)
+      }
+    })
+
+    pr.on('paymentmethod', async (e) => {
+      if (!acceptTerms) {
+        e.complete('fail')
+        setErrorMessage("利用規約に同意してください")
+        return
+      }
+
+      try {
+        setIsProcessing(true)
+        setErrorMessage("")
+
+        // Create payment intent
+        const requestData = {
+          email: e.payerEmail || email,
+          planId: selectedPlan,
+          tenant,
+        }
+        
+        const response = await fetch("/api/subscriptions/create", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify(requestData),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          e.complete('fail')
+          setErrorMessage(errorData?.error || "決済に失敗しました")
+          return
+        }
+
+        const data = await response.json()
+        
+        if (!data.clientSecret) {
+          e.complete('fail')
+          setErrorMessage("Payment session creation failed. Please try again.")
+          return
+        }
+        
+        const clientSecret = data.clientSecret
+        const customerId = data.customerId
+
+        // Confirm the payment
+        const { error, paymentIntent } = await stripe.confirmCardPayment(
+          clientSecret,
+          { payment_method: e.paymentMethod.id },
+          { handleActions: false }
+        )
+
+        if (error) {
+          e.complete('fail')
+          setErrorMessage(error.message || "決済に失敗しました")
+          return
+        }
+
+        e.complete('success')
+
+        if (paymentIntent && paymentIntent.status === 'succeeded') {
+          try {
+            const storedEmail = sessionStorage.getItem("email")
+            const storedPassword = sessionStorage.getItem("password")
+            
+            if (!storedEmail || !storedPassword) {
+              window.location.href = `${window.location.origin}/success`
+              return
+            }
+
+            await authService.signUp(storedEmail, storedPassword)
+            const currentUser = auth.currentUser
+            
+            if (currentUser) {
+              await authService.createUserDocument(
+                currentUser.uid,
+                storedEmail,
+                storedPassword,
+                customerId
+              )
+            }
+            
+            sessionStorage.removeItem("email")
+            sessionStorage.removeItem("password")
+            
+            window.location.href = `${window.location.origin}/success`
+          } catch (updateError) {
+            console.error("[CheckoutForm] Failed to create user document:", updateError)
+            window.location.href = `${window.location.origin}/success`
+          }
+        }
+      } catch (error: any) {
+        e.complete('fail')
+        console.error("[CheckoutForm] Payment submission error:", error)
+        setErrorMessage(error.message || "予期しないエラーが発生しました")
+      } finally {
+        setIsProcessing(false)
+      }
+    })
+  }, [stripe, selectedPlan, acceptTerms, email, tenant])
 
   // Get pricing display for selected plan
   const getPricingDisplay = (planId: string) => {
@@ -280,6 +416,40 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      {/* Apple Pay / Google Pay Button */}
+      {canMakePayment && paymentRequest && (
+        <div className="payment-section">
+          <h3 className="section-title">クイック決済</h3>
+          {!acceptTerms && (
+            <p className="text-sm text-yellow-500 mb-2">
+              ⚠️ クイック決済を使用するには、下記の利用規約に同意してください
+            </p>
+          )}
+          <div className={`mb-4 ${!acceptTerms ? 'opacity-50 pointer-events-none' : ''}`}>
+            <PaymentRequestButtonElement 
+              options={{ 
+                paymentRequest,
+                style: {
+                  paymentRequestButton: {
+                    type: 'default',
+                    theme: 'dark',
+                    height: '48px',
+                  },
+                },
+              }} 
+            />
+          </div>
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-700"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-[rgb(var(--background))] text-muted-foreground">または</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CARD INFORMATION Section */}
       <div className="payment-section">
         <h3 className="section-title">カード情報</h3>
@@ -426,11 +596,11 @@ export default function SubscribePage() {
 
   return (
     <div className="form-container">
-      <div className="min-h-screen flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 pt-20">
         <div className="w-full max-w-2xl">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2 text-balance">プランを選択</h1>
-            <p className="text-muted-foreground">続行するにはサブスクリプションプランを選択してください</p>
+            <h1 className="text-3xl font-bold mb-2 text-balance">プラン選択</h1>
+            <p className="text-muted-foreground">サブスクのプランを選択してください</p>
           </div>
 
           <div className="space-y-8">
@@ -438,7 +608,7 @@ export default function SubscribePage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <span className="step-number">1</span>
-                <h2 className="text-xl font-semibold">プランを選択</h2>
+                <h2 className="text-xl font-semibold">プラン選択</h2>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">

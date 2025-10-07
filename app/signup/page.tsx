@@ -10,7 +10,6 @@ export default function SignupPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [isIOSDevice, setIsIOSDevice] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   
   // Detect if user is actually on iOS
@@ -33,10 +32,6 @@ export default function SignupPage() {
 
     if (password !== confirmPassword) {
       newErrors.confirmPassword = "パスワードが一致しません"
-    }
-
-    if (!isIOSDevice) {
-      newErrors.iosDevice = "iOSデバイスをご使用であることを確認してください"
     }
 
     setErrors(newErrors)
@@ -75,14 +70,14 @@ export default function SignupPage() {
     }
   }
 
-  const isFormValid = email && password && confirmPassword && password === confirmPassword && password.length >= 6 && isIOSDevice
+  const isFormValid = email && password && confirmPassword && password === confirmPassword && password.length >= 6
 
   return (
     <div className="form-container">
       <div className="min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2 text-balance">アカウントを作成</h1>
+            <h1 className="text-3xl font-bold mb-2 text-balance">アカウント作成</h1>
             <p className="text-muted-foreground">ChatMateでAI英会話の旅を始めましょう</p>
           </div>
 
@@ -165,43 +160,17 @@ export default function SignupPage() {
               )}
             </div>
 
-            {/* iOS Device Checkbox */}
-            <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <input
-                  id="iosDevice"
-                  type="checkbox"
-                  checked={isIOSDevice}
-                  onChange={(e) => {
-                    setIsIOSDevice(e.target.checked)
-                    setErrors({ ...errors, iosDevice: "" })
-                  }}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
-                  aria-invalid={!!errors.iosDevice}
-                  aria-describedby={errors.iosDevice ? "ios-error" : undefined}
-                />
-                <label htmlFor="iosDevice" className="text-sm text-muted-foreground cursor-pointer">
-                  iOSデバイス（iPhone、iPad）を使用しています
-                </label>
-              </div>
-              
-              {!isActuallyIOS && (
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 flex items-start">
-                  <svg className="w-5 h-5 text-yellow-400 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  <p className="text-sm text-yellow-300">
-                    ⚠️ iOSデバイスが検出されませんでした。このサービスはiOSデバイス（iPhone、iPad）専用です。
-                  </p>
-                </div>
-              )}
-              
-              {errors.iosDevice && (
-                <p id="ios-error" className="error-message" role="alert">
-                  {errors.iosDevice}
+            {/* iOS Device Detection Warning */}
+            {!isActuallyIOS && (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 flex items-start">
+                <svg className="w-5 h-5 text-yellow-400 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <p className="text-sm text-yellow-300">
+                  ⚠️ iOSデバイスが検出されませんでした。このサービスはiOSデバイス（iPhone、iPad）専用です。
                 </p>
-              )}
-            </div>
+              </div>
+            )}
 
             {errors.submit && (
               <div className="error-message text-center" role="alert">
@@ -210,7 +179,7 @@ export default function SignupPage() {
             )}
 
             <button type="submit" disabled={!isFormValid || loading} className="primary-button">
-              {loading ? "アカウント作成中..." : "アカウントを作成"}
+              {loading ? "アカウント作成中..." : "アカウント作成"}
             </button>
 
             <p className="text-center text-sm text-muted-foreground">

@@ -32,7 +32,7 @@ export default function SuccessPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-6 bg-blue-500/20">
                 <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
               </div>
-              <h1 className="text-2xl font-semibold mb-3 text-white">アカウントを作成中...</h1>
+              <h1 className="text-2xl font-semibold mb-3 text-white">アカウント作成中...</h1>
               <p className="text-white/80">
                 アカウントの設定とサブスクリプションの有効化をお待ちください。
               </p>
