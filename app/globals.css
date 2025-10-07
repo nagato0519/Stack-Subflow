@@ -3,10 +3,20 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Global background styling */
+html, body {
+  background-color: var(--bg) !important;
+  color: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 :root {
   /* Custom theme variables for the signup flow */
-  --bg: #000000;
-  --accent: #ff9100;
+  --bg: #0E1217;
+  --accent: #FF9100;
 
   /* Shadcn design tokens */
   --background: oklch(1 0 0);
@@ -291,21 +301,114 @@
   align-items: center;
 }
 
-.card-input-container {
+.card-element-container {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: var(--radius) !important;
+  padding: 0.75rem 1rem !important;
+  min-height: 2.75rem !important;
+  transition: all 0.2s !important;
+  display: flex !important;
+  align-items: center !important;
+  position: relative !important;
+}
+
+.card-element-container:focus-within {
+  border: 1px solid var(--accent) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Ensure the Stripe CardElement fills the container properly */
+.card-element-container .StripeElement {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  position: relative;
+  z-index: 1;
+}
+
+.card-element-container .StripeElement--focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.card-element-container .StripeElement--invalid {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+/* Override Stripe's default input styling to match our form inputs */
+.card-element-container .StripeElement input {
+  background: transparent !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-size: 16px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-family: system-ui, sans-serif !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.card-element-container .StripeElement input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.card-element-container .StripeElement input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Ensure the CardElement iframe and container are transparent */
+.card-element-container .StripeElement iframe {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Force the container background to be visible */
+.card-element-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-  min-height: 2.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card-element-container:focus-within::before {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--accent);
+}
+
+.card-element-container .StripeElement .p-Input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.card-element-container .StripeElement .p-Input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .card-icon {
   font-size: 1.25rem;
   opacity: 0.7;
 }
+
 
 .card-placeholder {
   color: rgba(255, 255, 255, 0.5);

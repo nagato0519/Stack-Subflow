@@ -2,7 +2,6 @@
 
 import { useState, useEffect, type FormEvent } from "react"
 import { useSearchParams } from "next/navigation"
-import { ThemeCustomizer } from "@/components/theme-customizer"
 import { ClientOnly } from "@/components/client-only"
 import { authService } from "@/lib/auth"
 import { auth } from "@/lib/firebase"
@@ -67,36 +66,71 @@ const COUNTRY_CODES = [
   { code: "+30", country: "Greece", flag: "🇬🇷" },
 ]
 
-function CheckoutForm({ onPaymentElementMount, selectedPlan, clientSecret }: { onPaymentElementMount: () => void, selectedPlan: string, clientSecret: string }) {
+function PaymentForm({ selectedPlan, tenant, email }: { selectedPlan: string, tenant: string, email: string }) {
+
+  return (
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#ff9100',
+            colorBackground: 'rgba(255, 255, 255, 0.08)',
+            colorText: '#ffffff',
+            colorTextSecondary: 'rgba(255, 255, 255, 0.9)',
+            colorDanger: '#ff6b6b',
+            colorIcon: '#ffffff',
+            colorIconHover: '#ff9100',
+            fontFamily: 'system-ui, sans-serif',
+            spacingUnit: '4px',
+            borderRadius: '8px',
+          },
+          rules: {
+            '.Input': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: '#ffffff',
+            },
+            '.Input:focus': {
+              border: '1px solid #ff9100',
+              boxShadow: '0 0 0 2px rgba(255, 145, 0, 0.2)',
+            },
+          },
+        },
+        loader: 'auto',
+      }}
+    >
+      <CheckoutForm 
+        selectedPlan={selectedPlan}
+        tenant={tenant}
+        email={email}
+      />
+    </Elements>
+  )
+}
+
+function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedPlan: string, tenant: string, email: string }) {
   const stripe = useStripe()
   const elements = useElements()
   const [isProcessing, setIsProcessing] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [acceptTerms, setAcceptTerms] = useState(false)
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState(initialEmail)
   const [fullName, setFullName] = useState("")
-  const [phoneNumber, setPhoneNumber] = useState("")
-  const [countryCode, setCountryCode] = useState("+81")
+  const [cardHolderName, setCardHolderName] = useState("")
+
+  // Update email state when initialEmail prop changes
+  useEffect(() => {
+    console.log("[CheckoutForm] Email prop changed to:", initialEmail)
+    setEmail(initialEmail)
+  }, [initialEmail])
 
   // Get pricing display for selected plan
   const getPricingDisplay = (planId: string) => {
     const plan = PLANS.find(p => p.planId === planId)
     return plan ? plan.publicLabel : "¥1,000 / month"
   }
-
-  // Handle form ready event
-  const handleFormReady = () => {
-    onPaymentElementMount()
-  }
-
-  // Load stored data on mount
-  useEffect(() => {
-    const storedEmail = sessionStorage.getItem("email")
-    if (storedEmail) {
-      setEmail(storedEmail)
-    }
-    handleFormReady()
-  }, [])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -110,7 +144,7 @@ function CheckoutForm({ onPaymentElementMount, selectedPlan, clientSecret }: { o
       return
     }
 
-    if (!email || !phoneNumber || !fullName) {
+    if (!email || !fullName || !cardHolderName || !selectedPlan) {
       setErrorMessage("すべての必須項目を入力してください")
       return
     }
@@ -119,25 +153,78 @@ function CheckoutForm({ onPaymentElementMount, selectedPlan, clientSecret }: { o
     setErrorMessage("")
 
     try {
-      // Confirm payment with PaymentElement (supports Apple Pay, Google Pay, cards, etc.)
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/success`,
-          payment_method_data: {
-            billing_details: {
-              name: fullName || email.split('@')[0],
-              email: email,
-              phone: `${countryCode}${phoneNumber}`,
-            },
+      // Create payment intent first
+      const requestData = {
+        email: email,
+        planId: selectedPlan,
+        tenant,
+      }
+      console.log("[CheckoutForm] Sending request to API with:", requestData)
+      console.log("[CheckoutForm] Request URL:", "/api/subscriptions/create")
+      
+      const response = await fetch("/api/subscriptions/create", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(requestData),
+      })
+
+      console.log("[CheckoutForm] API Response status:", response.status, response.statusText)
+
+      if (!response.ok) {
+        let errorData
+        try {
+          const responseText = await response.text()
+          console.error("[CheckoutForm] Raw response text:", responseText)
+          
+          if (responseText) {
+            errorData = JSON.parse(responseText)
+          } else {
+            errorData = { error: 'Empty response from server' }
+          }
+        } catch (parseError) {
+          console.error("[CheckoutForm] Failed to parse error response:", parseError)
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` }
+        }
+        
+        console.error("[CheckoutForm] API Error Response:", errorData)
+        console.error("[CheckoutForm] Response status:", response.status)
+        console.error("[CheckoutForm] Response headers:", Object.fromEntries(response.headers.entries()))
+        
+        const errorMessage = errorData?.error || errorData?.message || `HTTP ${response.status}: ${response.statusText}`
+        setErrorMessage(errorMessage)
+        return
+      }
+
+      const data = await response.json()
+      console.log("[CheckoutForm] API Response:", data)
+      
+      if (!data.clientSecret) {
+        console.error("[CheckoutForm] Missing clientSecret in response:", data)
+        setErrorMessage("Payment session creation failed. Please try again.")
+        return
+      }
+      
+      const clientSecret = data.clientSecret
+      const customerId = data.customerId
+
+      // Confirm the payment with the card element
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement)!,
+          billing_details: {
+            name: cardHolderName,
+            email: email,
           },
         },
-        redirect: 'if_required',
       })
 
       if (error) {
         setErrorMessage(error.message || "決済に失敗しました")
-        console.error("[v0] Payment error:", error)
+        console.error("[CheckoutForm] Payment error:", error)
+        return
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
         try {
           // Get user data from sessionStorage
@@ -151,11 +238,14 @@ function CheckoutForm({ onPaymentElementMount, selectedPlan, clientSecret }: { o
             return
           }
 
+          // Create Firebase Auth account after successful payment
+          await authService.signUp(storedEmail, storedPassword)
+
           // Get current user from Firebase Auth
           const currentUser = auth.currentUser
           
           if (!currentUser) {
-            console.error("[v0] No authenticated user found")
+            console.error("[v0] No authenticated user found after account creation")
             window.location.href = `${window.location.origin}/success`
             return
           }
@@ -164,7 +254,8 @@ function CheckoutForm({ onPaymentElementMount, selectedPlan, clientSecret }: { o
           await authService.createUserDocument(
             currentUser.uid,
             storedEmail,
-            storedPassword
+            storedPassword,
+            customerId
           )
           
           // Clear stored data
@@ -180,8 +271,8 @@ function CheckoutForm({ onPaymentElementMount, selectedPlan, clientSecret }: { o
         }
       }
     } catch (error: any) {
-      console.error("[v0] Payment submission error:", error)
-      setErrorMessage("予期しないエラーが発生しました")
+      console.error("[CheckoutForm] Payment submission error:", error)
+      setErrorMessage(error.message || "予期しないエラーが発生しました")
     } finally {
       setIsProcessing(false)
     }
@@ -189,51 +280,51 @@ function CheckoutForm({ onPaymentElementMount, selectedPlan, clientSecret }: { o
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* PAYMENT METHODS Section */}
+      {/* CARD INFORMATION Section */}
       <div className="payment-section">
-        <h3 className="section-title">お支払い方法</h3>
+        <h3 className="section-title">カード情報</h3>
         <div className="space-y-4">
           <div>
-            <label className="field-label">支払い方法を選択</label>
-            <div className="payment-element-container">
-              <style jsx>{`
-                .payment-element-container {
-                  padding: 16px;
-                  background: rgba(255, 255, 255, 0.05);
-                  border-radius: 8px;
-                  border: 1px solid rgba(255, 255, 255, 0.1);
-                }
-                .payment-element-container .p-Input {
-                  background: rgba(255, 255, 255, 0.1) !important;
-                  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-                  color: #ffffff !important;
-                }
-                .payment-element-container .p-Input:focus {
-                  border: 1px solid #ff9100 !important;
-                  box-shadow: 0 0 0 2px rgba(255, 145, 0, 0.2) !important;
-                }
-              `}</style>
-              <PaymentElement 
+            <label className="field-label">カードナンバー</label>
+            <div className="card-element-container">
+              <CardElement
                 options={{
-                  layout: {
-                    type: 'tabs',
-                    defaultCollapsed: false,
-                  },
-                  fields: {
-                    billingDetails: {
-                      name: 'auto',
-                      email: 'auto',
-                      phone: 'auto',
+                  hidePostalCode: true,
+                  style: {
+                    base: {
+                      fontSize: '16px',
+                      color: '#ffffff',
+                      backgroundColor: 'transparent',
+                      '::placeholder': {
+                        color: 'rgba(255, 255, 255, 0.6)',
+                      },
                     },
-                  },
-                  wallets: {
-                    applePay: 'auto',
-                    googlePay: 'auto',
+                    invalid: {
+                      color: '#ff6b6b',
+                      backgroundColor: 'transparent',
+                    },
+                    complete: {
+                      color: '#ffffff',
+                      backgroundColor: 'transparent',
+                    },
                   },
                 }}
               />
             </div>
           </div>
+          
+          <div>
+            <label className="field-label">カード名義人</label>
+            <input
+              type="text"
+              value={cardHolderName}
+              onChange={(e) => setCardHolderName(e.target.value)}
+              className="form-input"
+              placeholder="TARO YAMADA"
+              required
+            />
+          </div>
+          
         </div>
       </div>
 
@@ -241,17 +332,6 @@ function CheckoutForm({ onPaymentElementMount, selectedPlan, clientSecret }: { o
       <div className="payment-section">
         <h3 className="section-title">お客様情報</h3>
         <div className="space-y-4">
-          <div>
-            <label className="field-label">お名前</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="form-input"
-              placeholder="山田 太郎"
-              required
-            />
-          </div>
           <div>
             <label className="field-label">メールアドレス</label>
             <input
@@ -264,28 +344,15 @@ function CheckoutForm({ onPaymentElementMount, selectedPlan, clientSecret }: { o
             />
           </div>
           <div>
-            <label className="field-label">電話番号</label>
-            <div className="phone-input-container">
-              <select
-                value={countryCode}
-                onChange={(e) => setCountryCode(e.target.value)}
-                className="country-code-select"
-              >
-                {COUNTRY_CODES.map((country) => (
-                  <option key={country.code} value={country.code}>
-                    {country.flag} {country.code}
-                  </option>
-                ))}
-              </select>
+            <label className="field-label">お名前</label>
               <input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className="phone-number-input"
-                placeholder="90-1234-5678"
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="form-input"
+              placeholder="山田太郎"
                 required
               />
-            </div>
           </div>
         </div>
       </div>
@@ -320,7 +387,7 @@ function CheckoutForm({ onPaymentElementMount, selectedPlan, clientSecret }: { o
       )}
 
       <button type="submit" disabled={!stripe || isProcessing || !acceptTerms} className="primary-button">
-        {isProcessing ? "処理中..." : "購読する"}
+        {isProcessing ? "処理中..." : "お支払い"}
       </button>
 
       <p className="text-center text-sm text-muted-foreground">お支払いはStripeによって安全に処理されます。</p>
@@ -333,103 +400,29 @@ export default function SubscribePage() {
   const tenant = searchParams.get("tenant") || "ai-english"
 
   const [email, setEmail] = useState("")
-  const [emailInput, setEmailInput] = useState("")
   const [selectedPlanId, setSelectedPlanId] = useState("")
-  const [clientSecret, setClientSecret] = useState("")
-  const [isLoadingPayment, setIsLoadingPayment] = useState(false)
-  const [error, setError] = useState("")
-  const [paymentElementMounted, setPaymentElementMounted] = useState(false)
 
   useEffect(() => {
     // Load email from sessionStorage
     const storedEmail = sessionStorage.getItem("email")
+    console.log("[SubscribePage] Loading email from sessionStorage:", storedEmail)
     if (storedEmail) {
       setEmail(storedEmail)
+      console.log("[SubscribePage] Email set to:", storedEmail)
     }
 
     // Load last selected plan
     const storedPlan = sessionStorage.getItem("selectedPlanId")
     if (storedPlan) {
       setSelectedPlanId(storedPlan)
-      // Auto-load payment form if plan is already selected
-      setTimeout(() => loadPaymentForm(storedPlan), 100)
+      // Don't auto-load payment form - only load when user clicks payment button
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePlanSelect = async (planId: string) => {
     setSelectedPlanId(planId)
     sessionStorage.setItem("selectedPlanId", planId)
-    
-    // Reset payment state when plan changes
-    setClientSecret("")
-    setPaymentElementMounted(false)
-    setError("")
-    
-    // Auto-load payment form for new plan
-    await loadPaymentForm(planId)
   }
-
-  const loadPaymentForm = async (planId?: string) => {
-    // Get email from multiple sources, prioritizing sessionStorage
-    const storedEmail = sessionStorage.getItem("email")
-    const finalEmail = storedEmail || email || emailInput
-    const planToUse = planId || selectedPlanId
-
-    if (!finalEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(finalEmail)) {
-      setError("有効なメールアドレスを入力してください")
-      return
-    }
-
-    if (!planToUse) {
-      setError("プランを選択してください")
-      return
-    }
-
-    setIsLoadingPayment(true)
-    setError("")
-
-    try {
-      console.log('Creating subscription with:', { email: finalEmail, planId: planToUse, tenant })
-      
-      // Call your API to create a subscription setup
-      const response = await fetch("/api/subscriptions/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: finalEmail,
-          planId: planToUse,
-          tenant,
-        }),
-      })
-
-      console.log('API response status:', response.status)
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to create payment session' }))
-        console.error('API error response:', errorData)
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      const data = await response.json()
-
-      // Stripe publishable key is already set via environment variable
-
-      setClientSecret(data.clientSecret)
-
-      // Store email if it was entered inline and update state
-      if (emailInput && !storedEmail) {
-        sessionStorage.setItem("email", emailInput)
-        setEmail(emailInput)
-      }
-    } catch (error: any) {
-      console.error("[v0] Payment form load error:", error)
-      setError(error.message || "お支払いフォームの読み込みに失敗しました")
-    } finally {
-      setIsLoadingPayment(false)
-    }
-  }
-
-  const isReadyToSubscribe = (email || emailInput) && selectedPlanId && clientSecret && paymentElementMounted
 
   return (
     <div className="form-container">
@@ -441,25 +434,6 @@ export default function SubscribePage() {
           </div>
 
           <div className="space-y-8">
-            {/* Email recall/input */}
-            {!email && (
-              <div>
-                <label htmlFor="email-input" className="form-label">
-                  メールアドレス
-                </label>
-                <input
-                  id="email-input"
-                  type="email"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  className="form-input"
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-            )}
-
-
             {/* Plan selector */}
             <div>
               <div className="flex items-center gap-2 mb-4">
@@ -485,88 +459,36 @@ export default function SubscribePage() {
               </div>
             </div>
 
-            {/* Payment Element */}
+            {/* Payment Form */}
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <span className="step-number">2</span>
-                <h2 className="text-xl font-semibold">お支払い詳細</h2>
+                <h2 className="text-xl font-semibold">お支払い</h2>
               </div>
 
               {!selectedPlanId ? (
                 <div className="text-center text-muted-foreground py-8">
                   お支払いを続行するには、上記からプランを選択してください
                 </div>
-              ) : isLoadingPayment ? (
-                <div className="text-center py-8">
-                  <div className="inline-flex items-center justify-center w-8 h-8 rounded-full border-4 border-gray-200 border-t-blue-600 animate-spin mb-4"></div>
-                  <p className="text-muted-foreground">お支払いフォームを読み込み中...</p>
-                </div>
-              ) : error ? (
-                <div className="error-message text-center py-4" role="alert">
-                  <div className="mb-2">{error}</div>
-                  <button 
-                    onClick={() => loadPaymentForm()} 
-                    className="text-sm underline hover:no-underline"
-                  >
-                    再試行
-                  </button>
-                </div>
-              ) : clientSecret ? (
+              ) : (
                 <ClientOnly fallback={
                   <div className="text-center py-8">
                     <div className="inline-flex items-center justify-center w-8 h-8 rounded-full border-4 border-gray-200 border-t-blue-600 animate-spin mb-4"></div>
                     <p className="text-muted-foreground">お支払いフォームを読み込み中...</p>
                   </div>
                 }>
-                  <Elements 
-                    stripe={stripePromise} 
-                    options={{ 
-                      clientSecret,
-                      appearance: {
-                        theme: 'stripe',
-                        variables: {
-                          colorPrimary: '#ff9100',
-                          colorBackground: 'rgba(255, 255, 255, 0.08)',
-                          colorText: '#ffffff',
-                          colorTextSecondary: 'rgba(255, 255, 255, 0.9)',
-                          colorDanger: '#ff6b6b',
-                          colorIcon: '#ffffff',
-                          colorIconHover: '#ff9100',
-                          fontFamily: 'system-ui, sans-serif',
-                          spacingUnit: '4px',
-                          borderRadius: '8px',
-                        },
-                        rules: {
-                          '.Input': {
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            color: '#ffffff',
-                          },
-                          '.Input:focus': {
-                            border: '1px solid #ff9100',
-                            boxShadow: '0 0 0 2px rgba(255, 145, 0, 0.2)',
-                          },
-                        },
-                      },
-                      loader: 'auto',
-                    }}
-                  >
-                    <CheckoutForm 
-                      onPaymentElementMount={() => setPaymentElementMounted(true)} 
+                  <PaymentForm 
                       selectedPlan={selectedPlanId}
-                      clientSecret={clientSecret}
+                    tenant={tenant}
+                    email={email}
                     />
-                  </Elements>
                 </ClientOnly>
-              ) : null}
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      <ClientOnly>
-        <ThemeCustomizer />
-      </ClientOnly>
     </div>
   )
 }

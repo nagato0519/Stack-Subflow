@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ThemeCustomizer } from "@/components/theme-customizer"
 
 export default function SuccessPage() {
   const router = useRouter()
@@ -11,7 +10,7 @@ export default function SuccessPage() {
   const [accountError, setAccountError] = useState("")
 
   useEffect(() => {
-    // Account and Firestore document should already be created during signup and payment
+    // Account and Firestore document should already be created during payment
     // Just show success message
     setAccountCreated(true)
     setIsCreatingAccount(false)
@@ -27,14 +26,8 @@ export default function SuccessPage() {
   return (
     <div className="form-container">
       <div className="min-h-screen flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-2xl">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2 text-balance">支払い完了</h1>
-            <p className="text-muted-foreground">アカウントの準備が完了しました</p>
-          </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-8 text-center">
-            {isCreatingAccount ? (
+        <div className="w-full max-w-2xl text-center">
+          {isCreatingAccount ? (
             <>
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-6 bg-blue-500/20">
                 <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
@@ -71,15 +64,12 @@ export default function SuccessPage() {
               </div>
               <h1 className="text-2xl font-semibold mb-3 text-white">アカウントの準備が完了しました！</h1>
               <p className="text-white/80">
-                アカウントが作成され、サブスクリプションが有効になりました。メールアドレスとパスワードを使用してアプリをご利用いただけます。
+                お支払い完了後、アカウントが作成され、サブスクリプションが有効になりました。メールアドレスとパスワードを使用してアプリをご利用いただけます。
               </p>
             </>
           )}
-          </div>
         </div>
       </div>
-
-      <ThemeCustomizer />
     </div>
   )
 }

@@ -4,7 +4,8 @@ import {
   signOut, 
   User,
   UserCredential,
-  AuthError
+  AuthError,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth'
 import { 
   doc, 
@@ -20,6 +21,8 @@ export interface UserData {
   id: string
   email: string
   password: string
+  stripeCustomerId?: string
+  status?: 'active' | 'canceled' | 'trial'
 }
 
 // Authentication functions
@@ -35,12 +38,14 @@ export const authService = {
   },
 
   // Create user document in Firestore after successful payment
-  async createUserDocument(uid: string, email: string, password: string): Promise<void> {
+  async createUserDocument(uid: string, email: string, password: string, stripeCustomerId?: string): Promise<void> {
     try {
       await setDoc(doc(db, 'users', uid), {
         id: uid,  // Same as document ID
         email,
-        password
+        password,
+        status: 'active',
+        ...(stripeCustomerId && { stripeCustomerId })
       })
     } catch (error) {
       throw error
@@ -50,8 +55,18 @@ export const authService = {
   // Sign in existing user
   async signIn(email: string, password: string): Promise<UserCredential> {
     try {
-      return await signInWithEmailAndPassword(auth, email, password)
+      console.log("[AuthService] Attempting sign in with email:", email)
+      console.log("[AuthService] Firebase auth instance:", auth)
+      
+      const result = await signInWithEmailAndPassword(auth, email, password)
+      console.log("[AuthService] Sign in successful for user:", result.user.uid)
+      return result
     } catch (error) {
+      console.error("[AuthService] Sign in failed:", {
+        code: (error as any)?.code,
+        message: (error as any)?.message,
+        email: email
+      })
       throw error
     }
   },
@@ -104,6 +119,43 @@ export const authService = {
     } catch (error) {
       throw error
     }
+  },
+
+  // Cancel user subscription
+  async cancelSubscription(uid: string): Promise<void> {
+    try {
+      // Call the API route to cancel the Stripe subscription and update Firestore
+      const response = await fetch('/api/subscriptions/cancel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: uid }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to cancel subscription')
+      }
+
+      const result = await response.json()
+      console.log('Subscription canceled successfully:', result)
+    } catch (error) {
+      console.error('Error canceling subscription:', error)
+      throw error
+    }
+  },
+
+  // Check if email already exists
+  async checkEmailExists(email: string): Promise<boolean> {
+    try {
+      const signInMethods = await fetchSignInMethodsForEmail(auth, email)
+      return signInMethods.length > 0
+    } catch (error) {
+      // If there's an error checking, assume email doesn't exist to allow signup
+      console.error("Error checking email existence:", error)
+      return false
+    }
   }
 }
 
@@ -122,6 +174,8 @@ export const getAuthErrorMessage = (error: AuthError): string => {
       return 'No account found with this email'
     case 'auth/wrong-password':
       return 'Incorrect password'
+    case 'auth/invalid-credential':
+      return 'Invalid email or password. Please check your credentials and try again.'
     case 'auth/too-many-requests':
       return 'Too many failed attempts. Please try again later'
     case 'auth/api-key-not-valid':
