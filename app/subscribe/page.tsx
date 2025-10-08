@@ -465,7 +465,7 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
           <>
             {!acceptTerms && (
               <p className="text-sm text-yellow-500 mb-2">
-                ⚠️ クイック決済を使用するには、下記の利用規約に同意してください
+                ⚠️ Apple決済を使用するには、上記の利用規約に同意してください
               </p>
             )}
             <div className={`mb-4 ${!acceptTerms ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -481,6 +481,14 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
                   },
                 }} 
               />
+            </div>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-700"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-[rgb(var(--background))] text-muted-foreground">または</span>
+              </div>
             </div>
           </>
         ) : (
