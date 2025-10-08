@@ -122,12 +122,21 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
   const [cardHolderName, setCardHolderName] = useState("")
   const [paymentRequest, setPaymentRequest] = useState<any>(null)
   const [canMakePayment, setCanMakePayment] = useState(false)
+  const [isIOSDevice, setIsIOSDevice] = useState(false)
 
   // Update email state when initialEmail prop changes
   useEffect(() => {
     console.log("[CheckoutForm] Email prop changed to:", initialEmail)
     setEmail(initialEmail)
   }, [initialEmail])
+
+  // Detect iOS device
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase()
+    const isIOS = /iphone|ipad|ipod/.test(userAgent)
+    setIsIOSDevice(isIOS)
+    console.log('Device detection - iOS:', isIOS, 'User Agent:', userAgent)
+  }, [])
 
   // Initialize Payment Request (Apple Pay, Google Pay, etc.)
   useEffect(() => {
@@ -456,60 +465,61 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
         </label>
       </div>
 
-      {/* Apple Pay / Google Pay Button */}
-      <div className="payment-section">
-        <h3 className="section-title">クイック決済</h3>
-        
-        
-        {canMakePayment && paymentRequest ? (
-          <>
-            {!acceptTerms && (
-              <p className="text-sm text-yellow-500 mb-2">
-                ⚠️ Apple決済を使用するには、上記の利用規約に同意してください
-              </p>
-            )}
-            <div className={`mb-4 ${!acceptTerms ? 'opacity-50 pointer-events-none' : ''}`}>
-              <PaymentRequestButtonElement 
-                options={{ 
-                  paymentRequest,
-                  style: {
-                    paymentRequestButton: {
-                      type: 'default',
-                      theme: 'dark',
-                      height: '48px',
+      {/* Apple Pay / Google Pay Button - Only show on iOS devices */}
+      {isIOSDevice && (
+        <div className="payment-section">
+          <h3 className="section-title">クイック決済</h3>
+          
+          {canMakePayment && paymentRequest ? (
+            <>
+              {!acceptTerms && (
+                <p className="text-sm text-yellow-500 mb-2">
+                  ⚠️ Apple決済を使用するには、上記の利用規約に同意してください
+                </p>
+              )}
+              <div className={`mb-4 ${!acceptTerms ? 'opacity-50 pointer-events-none' : ''}`}>
+                <PaymentRequestButtonElement 
+                  options={{ 
+                    paymentRequest,
+                    style: {
+                      paymentRequestButton: {
+                        type: 'default',
+                        theme: 'dark',
+                        height: '48px',
+                      },
                     },
-                  },
-                }} 
-              />
-            </div>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-700"></div>
+                  }} 
+                />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-[rgb(var(--background))] text-muted-foreground">または</span>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-[rgb(var(--background))] text-muted-foreground">または</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="mb-4 p-3 bg-gray-800 rounded">
+              <p className="text-sm text-gray-400 mb-2">
+                Apple Pay は現在利用できません
+              </p>
+              <p className="text-xs text-gray-500 mb-2">
+                Stripe: {stripe ? '✓' : '✗'}, PaymentRequest: {paymentRequest ? '✓' : '✗'}, CanPay: {canMakePayment ? '✓' : '✗'}
+              </p>
+              <div className="text-xs text-gray-600">
+                <p className="mb-1">Apple Payを有効にするには:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>StripeダッシュボードでApple Payを有効化</li>
+                  <li>ドメイン認証を完了 (eg-chatmate-ai.vercel.app)</li>
+                  <li>Safariブラウザでアクセス</li>
+                </ul>
               </div>
             </div>
-          </>
-        ) : (
-          <div className="mb-4 p-3 bg-gray-800 rounded">
-            <p className="text-sm text-gray-400 mb-2">
-              Apple Pay は現在利用できません
-            </p>
-            <p className="text-xs text-gray-500 mb-2">
-              Stripe: {stripe ? '✓' : '✗'}, PaymentRequest: {paymentRequest ? '✓' : '✗'}, CanPay: {canMakePayment ? '✓' : '✗'}
-            </p>
-            <div className="text-xs text-gray-600">
-              <p className="mb-1">Apple Payを有効にするには:</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>StripeダッシュボードでApple Payを有効化</li>
-                <li>ドメイン認証を完了 (eg-chatmate-ai.vercel.app)</li>
-                <li>Safariブラウザでアクセス</li>
-              </ul>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* CARD INFORMATION Section */}
       <div className="payment-section">
