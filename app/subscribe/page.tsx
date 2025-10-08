@@ -468,7 +468,7 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
       {/* Apple Pay / Google Pay Button - Only show on iOS devices */}
       {isIOSDevice && (
         <div className="payment-section">
-          <h3 className="section-title">クイック決済</h3>
+          <h3 className="section-title">ApplePay</h3>
           
           {canMakePayment && paymentRequest ? (
             <>
@@ -491,14 +491,6 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
                   }} 
                 />
               </div>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-700"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-[rgb(var(--background))] text-muted-foreground">または</span>
-                </div>
-              </div>
             </>
           ) : (
             <div className="mb-4 p-3 bg-gray-800 rounded">
@@ -518,6 +510,18 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Divider between Apple Pay and Card Information */}
+      {isIOSDevice && (
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-700"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-[rgb(var(--background))] text-muted-foreground">または</span>
+          </div>
         </div>
       )}
 
