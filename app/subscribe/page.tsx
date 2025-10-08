@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, type FormEvent } from "react"
+import { useState, useEffect, useRef, type FormEvent } from "react"
 import { useSearchParams } from "next/navigation"
 import { ClientOnly } from "@/components/client-only"
 import { authService } from "@/lib/auth"
@@ -123,6 +123,14 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
   const [paymentRequest, setPaymentRequest] = useState<any>(null)
   const [canMakePayment, setCanMakePayment] = useState(false)
   const [isIOSDevice, setIsIOSDevice] = useState(false)
+  
+  // Use ref to store current acceptTerms value to avoid closure issues
+  const acceptTermsRef = useRef(acceptTerms)
+  
+  // Update ref whenever acceptTerms changes
+  useEffect(() => {
+    acceptTermsRef.current = acceptTerms
+  }, [acceptTerms])
 
   // Update email state when initialEmail prop changes
   useEffect(() => {
@@ -196,7 +204,8 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
     })
 
     pr.on('paymentmethod', async (e) => {
-      if (!acceptTerms) {
+      // Use ref to get current value, avoiding closure issues
+      if (!acceptTermsRef.current) {
         e.complete('fail')
         setErrorMessage("利用規約に同意してください")
         return
@@ -294,7 +303,7 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
         setIsProcessing(false)
       }
     })
-  }, [stripe, selectedPlan, acceptTerms, email, tenant])
+  }, [stripe, selectedPlan, email, tenant])
 
   // Get pricing display for selected plan
   const getPricingDisplay = (planId: string) => {
@@ -472,25 +481,28 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
           
           {canMakePayment && paymentRequest ? (
             <>
-              {!acceptTerms && (
-                <p className="text-sm text-yellow-500 mb-2">
-                  ⚠️ Apple決済を使用するには、上記の利用規約に同意してください
-                </p>
-              )}
-              <div className={`mb-4 ${!acceptTerms ? 'opacity-50 pointer-events-none' : ''}`}>
-                <PaymentRequestButtonElement 
-                  options={{ 
-                    paymentRequest,
-                    style: {
-                      paymentRequestButton: {
-                        type: 'default',
-                        theme: 'dark',
-                        height: '48px',
+              {!acceptTerms ? (
+                <div className="mb-4 p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
+                  <p className="text-sm text-yellow-500">
+                    ⚠️ Apple決済を使用するには、上記の利用規約に同意してください
+                  </p>
+                </div>
+              ) : (
+                <div className="mb-4">
+                  <PaymentRequestButtonElement 
+                    options={{ 
+                      paymentRequest,
+                      style: {
+                        paymentRequestButton: {
+                          type: 'default',
+                          theme: 'dark',
+                          height: '48px',
+                        },
                       },
-                    },
-                  }} 
-                />
-              </div>
+                    }} 
+                  />
+                </div>
+              )}
             </>
           ) : (
             <div className="mb-4 p-3 bg-gray-800 rounded">
