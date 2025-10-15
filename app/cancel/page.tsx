@@ -112,6 +112,17 @@ export default function CancelPage() {
       setShowConfirmation(false)
       setCancelSuccess(true)
       
+      // Automatically sign out after successful cancellation
+      setTimeout(async () => {
+        try {
+          await authService.signOut()
+          setUser(null)
+          setUserData(null)
+        } catch (error) {
+          console.error("Error signing out after cancellation:", error)
+        }
+      }, 2000) // Wait 2 seconds to show success message before signing out
+      
     } catch (error) {
       console.error("Error canceling subscription:", error)
       setError("サブスクリプションのキャンセルに失敗しました。もう一度お試しください。")
@@ -271,14 +282,8 @@ export default function CancelPage() {
             </div>
             <h1 className="text-2xl font-semibold mb-3 text-white">サブスクリプションのキャンセルが完了しました</h1>
             <p className="text-white/80 mb-6">
-              定期支払いが停止され、アカウントのステータスが更新されました。
+              定期支払いが停止され、アカウントのステータスが更新されました。自動的にサインアウトします...
             </p>
-            <button 
-              onClick={handleLogout}
-              className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
-            >
-              ログアウト
-            </button>
           </div>
         </div>
       </div>
@@ -300,12 +305,6 @@ export default function CancelPage() {
             <p className="text-white/80 mb-6">
               このアカウントのサブスクリプションは既にキャンセルされています。
             </p>
-            <button 
-              onClick={handleLogout}
-              className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
-            >
-              ログアウト
-            </button>
           </div>
         </div>
       </div>
