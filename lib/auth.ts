@@ -23,6 +23,7 @@ export interface UserData {
   password: string
   stripeCustomerId?: string
   status?: 'active' | 'canceled' | 'trial'
+  source?: string
 }
 
 // Authentication functions
@@ -45,6 +46,7 @@ export const authService = {
         email,
         password,
         status: 'active',
+        source: 'web',
         ...(stripeCustomerId && { stripeCustomerId })
       })
     } catch (error) {
