@@ -24,6 +24,7 @@ export interface UserData {
   stripeCustomerId?: string
   status?: 'active' | 'canceled' | 'trial'
   source?: string
+  expireDate?: any // Firestore Timestamp - when subscription access expires
 }
 
 // Authentication functions

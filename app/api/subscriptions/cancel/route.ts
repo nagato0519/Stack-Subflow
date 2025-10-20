@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
+import { doc, updateDoc, serverTimestamp, getDoc, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 
 // Initialize Stripe with your secret key
@@ -58,19 +58,40 @@ export async function POST(request: NextRequest) {
 
     console.log('Cancel API: Found active subscriptions:', subscriptions.data.length)
 
-    // Cancel all active subscriptions
+    // Cancel all active subscriptions and get expireDate
     const canceledSubscriptions = []
+    let expireDate = null
+    
     for (const subscription of subscriptions.data) {
       console.log('Cancel API: Canceling subscription:', subscription.id)
+      
+      // Get subscription end date before canceling (current_period_end is Unix timestamp)
+      const subscriptionEndDate = subscription.current_period_end
+      const endDate = new Date(subscriptionEndDate * 1000) // Convert Unix to Date
+      
+      // Store the latest expireDate (in case of multiple subscriptions)
+      if (!expireDate || endDate > expireDate) {
+        expireDate = endDate
+      }
+      
+      console.log('Cancel API: Subscription will expire at:', endDate.toISOString())
+      
       const canceled = await stripe.subscriptions.cancel(subscription.id)
       canceledSubscriptions.push(canceled.id)
     }
 
-    // Update user document status to 'canceled'
-    await updateDoc(userDocRef, {
+    // Update user document status to 'canceled' and add expireDate
+    const updateData: any = {
       status: 'canceled',
       updatedAt: serverTimestamp()
-    })
+    }
+    
+    if (expireDate) {
+      updateData.expireDate = Timestamp.fromDate(expireDate)
+      console.log('Cancel API: Setting expireDate to:', expireDate.toISOString())
+    }
+    
+    await updateDoc(userDocRef, updateData)
 
     console.log('Cancel API: Successfully canceled subscriptions and updated user status')
 
