@@ -78,14 +78,14 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Get the price ID for the selected plan
-    const priceId = getPriceIdForPlan(planId)
+    // Use the single subscription price ID
+    const priceId = process.env.STRIPE_PRICE_ID
     
     if (!priceId) {
-      console.error(`No price ID found for plan: ${planId}`)
+      console.error(`STRIPE_PRICE_ID environment variable is not set`)
       return NextResponse.json(
-        { error: `Invalid plan selected: ${planId}. Please contact support.` },
-        { status: 400 }
+        { error: `Subscription configuration error. Please contact support.` },
+        { status: 500 }
       )
     }
 
@@ -164,13 +164,5 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to get Stripe price ID for plan
-// You need to create these products and prices in your Stripe Dashboard first
-function getPriceIdForPlan(planId: string): string | null {
-  const priceIds: Record<string, string> = {
-    'monthly_basic': process.env.STRIPE_MONTHLY_PRICE_ID || '', // Replace with your actual price ID
-    'semiannual_basic': process.env.STRIPE_SEMIANNUAL_PRICE_ID || '', // Replace with your actual price ID
-  }
-  
-  return priceIds[planId] || null
-}
+// Note: This API now uses a single STRIPE_PRICE_ID environment variable
+// instead of multiple plan-specific price IDs

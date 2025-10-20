@@ -138,7 +138,7 @@ export const authService = {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to cancel subscription')
+        throw new Error(errorData.error || 'サブスクリプションのキャンセルに失敗しました')
       }
 
       const result = await response.json()
@@ -166,26 +166,26 @@ export const authService = {
 export const getAuthErrorMessage = (error: AuthError): string => {
   switch (error.code) {
     case 'auth/email-already-in-use':
-      return 'This email address is already in use. Please use a different email or try signing in.'
+      return 'このメールアドレスは既に使用されています。別のメールアドレスを使用するか、サインインをお試しください。'
     case 'auth/invalid-email':
-      return 'Invalid email address'
+      return 'メールアドレスが無効です'
     case 'auth/operation-not-allowed':
-      return 'Email/password accounts are not enabled'
+      return 'メール/パスワードアカウントが有効になっていません'
     case 'auth/weak-password':
-      return 'Password should be at least 6 characters'
+      return 'パスワードは6文字以上である必要があります'
     case 'auth/user-not-found':
-      return 'No account found with this email'
+      return 'このメールアドレスのアカウントが見つかりません'
     case 'auth/wrong-password':
-      return 'Incorrect password'
+      return 'パスワードが正しくありません'
     case 'auth/invalid-credential':
-      return 'Invalid email or password. Please check your credentials and try again.'
+      return 'メールアドレスまたはパスワードが正しくありません。入力内容をご確認の上、もう一度お試しください。'
     case 'auth/too-many-requests':
-      return 'Too many failed attempts. Please try again later'
+      return '試行回数が多すぎます。しばらくしてからもう一度お試しください'
     case 'auth/api-key-not-valid':
-      return 'Firebase configuration error. Please contact support.'
+      return 'Firebase設定エラー。サポートにお問い合わせください。'
     case 'auth/network-request-failed':
-      return 'Network error. Please check your connection and try again.'
+      return 'ネットワークエラー。接続を確認して、もう一度お試しください。'
     default:
-      return `Authentication error: ${error.message || 'Please try again'}`
+      return `認証エラー：${error.message || 'もう一度お試しください'}`
   }
 }

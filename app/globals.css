@@ -15,8 +15,8 @@ html, body {
 
 :root {
   /* Custom theme variables for the signup flow */
-  --bg: #0E1217;
-  --accent: #FF9100;
+  --bg: #0E0E0E;
+  --accent: #D8F966;
 
   /* Shadcn design tokens */
   --background: oklch(1 0 0);

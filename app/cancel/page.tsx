@@ -32,7 +32,7 @@ export default function CancelPage() {
           setUserData(data)
         } catch (error) {
           console.error("Error fetching user data:", error)
-          setError("ユーザー情報の取得に失敗しました")
+          setError("Failed to fetch user information")
         }
       }
       setLoading(false)
@@ -45,7 +45,7 @@ export default function CancelPage() {
     e.preventDefault()
     
     if (!email || !password) {
-      setLoginError("メールアドレスとパスワードを入力してください")
+      setLoginError("Please enter both email and password")
       return
     }
 
@@ -79,12 +79,12 @@ export default function CancelPage() {
 
   const handleResetPassword = async () => {
     if (!email) {
-      setLoginError("メールアドレスを入力してください")
+      setLoginError("Please enter your email address")
       return
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setLoginError("有効なメールアドレスを入力してください")
+      setLoginError("Please enter a valid email address")
       return
     }
 
@@ -125,7 +125,7 @@ export default function CancelPage() {
       
     } catch (error) {
       console.error("Error canceling subscription:", error)
-      setError("サブスクリプションのキャンセルに失敗しました。もう一度お試しください。")
+      setError("Failed to cancel subscription. Please try again.")
     } finally {
       setCanceling(false)
     }
@@ -151,7 +151,7 @@ export default function CancelPage() {
               <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
             </div>
             <h1 className="text-2xl font-semibold mb-3 text-white">読み込み中...</h1>
-            <p className="text-white/80">認証状態を確認しています</p>
+            <p className="text-white/80">認証を確認しています</p>
           </div>
         </div>
       </div>
@@ -165,8 +165,8 @@ export default function CancelPage() {
         <div className="min-h-screen flex items-center justify-center px-4 py-12">
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold mb-2 text-balance">サブスクリプションキャンセル</h1>
-              <p className="text-muted-foreground">キャンセルするにはログインしてください</p>
+              <h1 className="text-3xl font-bold mb-2 text-balance">サブスクリプションをキャンセル</h1>
+              <p className="text-muted-foreground">続けるにはサインインしてください</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-6">
@@ -211,7 +211,7 @@ export default function CancelPage() {
                   {loginError}
                   {loginError.includes("Invalid email or password") && (
                     <div className="mt-3 text-sm text-muted-foreground">
-                      <p>確認してください：</p>
+                      <p>以下をご確認ください：</p>
                       <ul className="list-disc list-inside mt-1 space-y-1">
                         <li>メールアドレスが正しく入力されているか</li>
                         <li>パスワードが正しいか</li>
@@ -227,7 +227,7 @@ export default function CancelPage() {
                 disabled={!email || !password || loginLoading}
                 className="primary-button w-full"
               >
-                {loginLoading ? "ログイン中..." : "ログイン"}
+                {loginLoading ? "サインイン中..." : "サインイン"}
               </button>
 
               <div className="text-center">
@@ -236,20 +236,20 @@ export default function CancelPage() {
                   onClick={() => setShowResetPassword(!showResetPassword)}
                   className="text-sm text-muted-foreground hover:text-foreground underline"
                 >
-                  パスワードを忘れた場合
+                  パスワードをお忘れですか？
                 </button>
               </div>
 
               {showResetPassword && (
                 <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                  <h3 className="text-sm font-medium">パスワードリセット</h3>
+                  <h3 className="text-sm font-medium">パスワードをリセット</h3>
                   <p className="text-sm text-muted-foreground">
-                    上記のメールアドレスにパスワードリセット用のリンクを送信します。
+                    上記のメールアドレスにパスワードリセットリンクを送信します。
                   </p>
                   
                   {resetEmailSent ? (
                     <div className="text-sm text-green-600">
-                      パスワードリセット用のメールを送信しました。メールボックスをご確認ください。
+                      パスワードリセットメールを送信しました。受信トレイをご確認ください。
                     </div>
                   ) : (
                     <button
@@ -280,9 +280,9 @@ export default function CancelPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-2xl font-semibold mb-3 text-white">サブスクリプションのキャンセルが完了しました</h1>
+            <h1 className="text-2xl font-semibold mb-3 text-white">サブスクリプションがキャンセルされました</h1>
             <p className="text-white/80 mb-6">
-              定期支払いが停止され、アカウントのステータスが更新されました。自動的にサインアウトします...
+              サブスクリプションがキャンセルされ、定期支払いが停止されました。サインアウトしています...
             </p>
           </div>
         </div>
@@ -317,7 +317,7 @@ export default function CancelPage() {
       <div className="min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2 text-balance">サブスクリプションキャンセル</h1>
+            <h1 className="text-3xl font-bold mb-2 text-balance">サブスクリプションをキャンセル</h1>
             <p className="text-muted-foreground">アカウント情報を確認してください</p>
           </div>
 
@@ -327,16 +327,16 @@ export default function CancelPage() {
               <h3 className="text-sm font-medium mb-3">アカウント情報</h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <span className="text-muted-foreground">メールアドレス:</span>
+                  <span className="text-muted-foreground">メールアドレス：</span>
                   <span className="ml-2">{userData?.email}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">ステータス:</span>
-                  <span className="ml-2 capitalize">{userData?.status || 'active'}</span>
+                  <span className="text-muted-foreground">ステータス：</span>
+                  <span className="ml-2 capitalize">{userData?.status || 'アクティブ'}</span>
                 </div>
                 {userData?.stripeCustomerId && (
                   <div>
-                    <span className="text-muted-foreground">顧客ID:</span>
+                    <span className="text-muted-foreground">カスタマーID：</span>
                     <span className="ml-2 font-mono text-xs">{userData.stripeCustomerId}</span>
                   </div>
                 )}
@@ -350,10 +350,10 @@ export default function CancelPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
                 <div>
-                  <h4 className="text-sm font-medium text-yellow-400 mb-1">注意事項</h4>
+                  <h4 className="text-sm font-medium text-yellow-400 mb-1">重要</h4>
                   <p className="text-sm text-yellow-300">
-                    サブスクリプションをキャンセルすると、サービスへのアクセスが制限される場合があります。
-                    この操作は取り消すことができません。
+                    サブスクリプションをキャンセルすると、Stackサービスへのアクセスが制限されます。
+                    この操作は元に戻せません。
                   </p>
                 </div>
               </div>
@@ -384,7 +384,7 @@ export default function CancelPage() {
                     onClick={handleLogout}
                     className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
                   >
-                    ログアウト
+                    サインアウト
                   </button>
                 </>
               ) : (
@@ -392,7 +392,7 @@ export default function CancelPage() {
                   <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                     <h4 className="text-sm font-medium text-red-400 mb-2">最終確認</h4>
                     <p className="text-sm text-red-300 mb-4">
-                      本当にサブスクリプションをキャンセルしますか？この操作は取り消すことができません。
+                      本当にサブスクリプションをキャンセルしますか？この操作は元に戻せません。
                     </p>
                     <div className="flex space-x-3">
                       <button
@@ -407,7 +407,7 @@ export default function CancelPage() {
                         disabled={canceling}
                         className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                       >
-                        キャンセル
+                        戻る
                       </button>
                     </div>
                   </div>

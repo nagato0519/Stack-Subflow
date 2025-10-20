@@ -7,13 +7,13 @@ import Image from 'next/image'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'ChatMate - AI英会話アプリ',
-  description: 'AI技術を活用した英会話学習アプリケーション',
+  title: 'Stack - アカウント作成',
+  description: 'Stackアカウントを作成',
   generator: 'v0.app',
   icons: {
-    icon: '/ChatMateIcon.png',
-    shortcut: '/ChatMateIcon.png',
-    apple: '/ChatMateIcon.png',
+    icon: '/stack.png',
+    shortcut: '/stack.png',
+    apple: '/stack.png',
   },
 }
 
@@ -41,15 +41,15 @@ export default function RootLayout({
             <header className="absolute top-0 left-0 p-4 z-10">
               <div className="flex items-center gap-3">
                 <Image 
-                  src="/ChatMateIcon.png" 
-                  alt="ChatMate Logo" 
+                  src="/stack.png" 
+                  alt="Stack Logo" 
                   width={28} 
                   height={28} 
                   className="rounded"
                   priority
                 />
                 <h1 className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>
-                  ChatMate
+                  Stack
                 </h1>
               </div>
             </header>

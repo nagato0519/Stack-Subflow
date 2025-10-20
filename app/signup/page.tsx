@@ -19,13 +19,13 @@ export default function SignupPage() {
     const newErrors: Record<string, string> = {}
 
     if (!email) {
-      newErrors.email = "メールアドレスは必須です"
+      newErrors.email = "メールアドレスを入力してください"
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = "有効なメールアドレスを入力してください"
     }
 
     if (!password) {
-      newErrors.password = "パスワードは必須です"
+      newErrors.password = "パスワードを入力してください"
     } else if (password.length < 6) {
       newErrors.password = "パスワードは6文字以上である必要があります"
     }
@@ -50,7 +50,7 @@ export default function SignupPage() {
       // Check if email already exists
       const emailExists = await authService.checkEmailExists(email)
       if (emailExists) {
-        setErrors({ email: "このメールアドレスは既に登録されています。ログインページからサインインしてください。" })
+        setErrors({ email: "このメールアドレスは既に登録されています。サインインしてください。" })
         return
       }
 
@@ -61,7 +61,7 @@ export default function SignupPage() {
       console.log("[SignupPage] Email stored successfully, navigating to subscribe page")
 
       // Navigate to subscribe page
-      router.push("/subscribe?tenant=ai-english")
+      router.push("/subscribe?tenant=stack")
     } catch (error: any) {
       console.error("[SignupPage] Error during signup:", error)
       setErrors({ submit: "アカウント作成中にエラーが発生しました。もう一度お試しください。" })
@@ -78,7 +78,7 @@ export default function SignupPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2 text-balance">アカウント作成</h1>
-            <p className="text-muted-foreground">ChatMateでAI英会話の旅を始めましょう</p>
+            <p className="text-muted-foreground">Stackを始めましょう</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -126,7 +126,7 @@ export default function SignupPage() {
                 aria-describedby="password-helper password-error"
               />
               <p id="password-helper" className="helper-text">
-                6文字以上
+                最低6文字
               </p>
               {errors.password && (
                 <p id="password-error" className="error-message" role="alert">
@@ -162,11 +162,8 @@ export default function SignupPage() {
 
             {/* iOS Device Detection Warning */}
             {!isActuallyIOS && (
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 flex items-start">
-                <svg className="w-5 h-5 text-yellow-400 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <p className="text-sm text-yellow-300">
+              <div className="p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
+                <p className="text-sm text-yellow-500 text-center leading-relaxed">
                   ⚠️ iOSデバイスが検出されませんでした。このサービスはiOSデバイス（iPhone、iPad）専用です。
                 </p>
               </div>
@@ -183,18 +180,18 @@ export default function SignupPage() {
             </button>
 
             <p className="text-center text-sm text-muted-foreground">
-              次のステップでプランを選択し、お支払いを行います。お支払いはStripeによって安全に処理されます。
+              次に、お支払いを完了します。すべての支払いはStripeによって安全に処理されます。
             </p>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              既にアカウントをお持ちですか？{" "}
+              すでにアカウントをお持ちですか？{" "}
               <a 
                 href="/cancel" 
                 className="text-blue-400 hover:text-blue-300 underline"
               >
-                ログイン / サブスクリプションキャンセル
+                サインイン / サブスクリプションキャンセル
               </a>
             </p>
           </div>

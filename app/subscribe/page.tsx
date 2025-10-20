@@ -11,27 +11,16 @@ import { Elements, CardElement, useStripe, useElements, PaymentRequestButtonElem
 // Initialize Stripe with publishable key
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
-interface Plan {
-  planId: string
-  planName: string
-  publicLabel: string
-  description: string
+// Single subscription plan configuration
+const SUBSCRIPTION_PLAN = {
+  planId: "stack_subscription",
+  planName: "Stackサブスクリプション",
+  publicLabel: "Stackに登録",
+  description: "Stackサービスへのフルアクセス",
+  price: 1500,
+  originalPrice: 3000,
+  currency: "¥"
 }
-
-const PLANS: Plan[] = [
-  {
-    planId: "monthly_basic",
-    planName: "月額プラン",
-    publicLabel: "¥980 / 月",
-    description: "初心者におすすめ",
-  },
-  {
-    planId: "semiannual_basic",
-    planName: "6ヶ月プラン",
-    publicLabel: "¥5,280 / 6ヶ月",
-    description: "6ヶ月一括でお得",
-  },
-]
 
 const COUNTRY_CODES = [
   { code: "+81", country: "Japan", flag: "🇯🇵" },
@@ -66,17 +55,18 @@ const COUNTRY_CODES = [
   { code: "+30", country: "Greece", flag: "🇬🇷" },
 ]
 
-function PaymentForm({ selectedPlan, tenant, email }: { selectedPlan: string, tenant: string, email: string }) {
+function PaymentForm({ tenant, email }: { tenant: string, email: string }) {
+  const selectedPlan = SUBSCRIPTION_PLAN.planId
 
   return (
     <Elements 
       stripe={stripePromise} 
       options={{ 
-        locale: 'en',
+        locale: 'ja',
         appearance: {
           theme: 'stripe',
           variables: {
-            colorPrimary: '#ff9100',
+            colorPrimary: '#D8F966',
             colorBackground: 'rgba(255, 255, 255, 0.08)',
             colorText: '#ffffff',
             colorTextSecondary: 'rgba(255, 255, 255, 0.9)',
@@ -94,8 +84,8 @@ function PaymentForm({ selectedPlan, tenant, email }: { selectedPlan: string, te
               color: '#ffffff',
             },
             '.Input:focus': {
-              border: '1px solid #ff9100',
-              boxShadow: '0 0 0 2px rgba(255, 145, 0, 0.2)',
+              border: '1px solid #D8F966',
+              boxShadow: '0 0 0 2px rgba(216, 249, 102, 0.2)',
             },
           },
         },
@@ -103,7 +93,6 @@ function PaymentForm({ selectedPlan, tenant, email }: { selectedPlan: string, te
       }}
     >
       <CheckoutForm 
-        selectedPlan={selectedPlan}
         tenant={tenant}
         email={email}
       />
@@ -111,7 +100,8 @@ function PaymentForm({ selectedPlan, tenant, email }: { selectedPlan: string, te
   )
 }
 
-function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedPlan: string, tenant: string, email: string }) {
+function CheckoutForm({ tenant, email: initialEmail }: { tenant: string, email: string }) {
+  const selectedPlan = SUBSCRIPTION_PLAN.planId
   const stripe = useStripe()
   const elements = useElements()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -148,40 +138,34 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
 
   // Initialize Payment Request (Apple Pay, Google Pay, etc.)
   useEffect(() => {
-    if (!stripe || !selectedPlan) {
-      console.log('Missing stripe or selectedPlan:', { stripe: !!stripe, selectedPlan })
+    if (!stripe) {
+      console.log('Missing stripe:', { stripe: !!stripe })
       return
     }
 
-    const plan = PLANS.find(p => p.planId === selectedPlan)
-    if (!plan) {
-      console.log('Plan not found for selectedPlan:', selectedPlan)
-      return
-    }
-
-    // Extract amount from plan label (e.g., "¥980 / 月" -> 980)
-    const amountMatch = plan.publicLabel.match(/¥([\d,]+)/)
-    const amount = amountMatch ? parseInt(amountMatch[1].replace(/,/g, '')) : 1000
+    // For payment request, we'll set the amount to match the subscription price
+    // Stripe expects amount in the smallest currency unit (for JPY, that's 1 yen)
+    const amount = SUBSCRIPTION_PLAN.price // 1500 JPY
 
     console.log('Creating Payment Request with:', {
       country: 'JP',
       currency: 'jpy',
       amount,
-      label: plan.planName
+      label: SUBSCRIPTION_PLAN.planName
     })
 
     const pr = stripe.paymentRequest({
       country: 'JP',
       currency: 'jpy',
       total: {
-        label: plan.planName,
+        label: SUBSCRIPTION_PLAN.planName,
         amount: amount,
       },
       requestPayerName: true,
       requestPayerEmail: true,
       displayItems: [
         {
-          label: plan.planName,
+          label: SUBSCRIPTION_PLAN.planName,
           amount: amount,
         },
       ],
@@ -242,7 +226,7 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
         
         if (!data.clientSecret) {
           e.complete('fail')
-          setErrorMessage("Payment session creation failed. Please try again.")
+          setErrorMessage("決済セッションの作成に失敗しました。もう一度お試しください。")
           return
         }
         
@@ -303,12 +287,11 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
         setIsProcessing(false)
       }
     })
-  }, [stripe, selectedPlan, email, tenant])
+  }, [stripe, email, tenant])
 
-  // Get pricing display for selected plan
-  const getPricingDisplay = (planId: string) => {
-    const plan = PLANS.find(p => p.planId === planId)
-    return plan ? plan.publicLabel : "¥1,000 / month"
+  // Pricing display for subscription
+  const getPricingDisplay = () => {
+    return SUBSCRIPTION_PLAN.publicLabel
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -323,7 +306,7 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
       return
     }
 
-    if (!email || !fullName || !cardHolderName || !selectedPlan) {
+    if (!email || !fullName || !cardHolderName) {
       setErrorMessage("すべての必須項目を入力してください")
       return
     }
@@ -382,7 +365,7 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
       
       if (!data.clientSecret) {
         console.error("[CheckoutForm] Missing clientSecret in response:", data)
-        setErrorMessage("Payment session creation failed. Please try again.")
+        setErrorMessage("決済セッションの作成に失敗しました。もう一度お試しください。")
         return
       }
       
@@ -459,6 +442,27 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      {/* Pricing Display */}
+      <div className="payment-section">
+        <div className="text-center space-y-4">
+          <div>
+            <div className="text-sm text-muted-foreground mb-2">月額料金</div>
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-4xl font-bold text-white">{SUBSCRIPTION_PLAN.currency}{SUBSCRIPTION_PLAN.price.toLocaleString()}</span>
+              <span className="text-xl text-muted-foreground line-through">{SUBSCRIPTION_PLAN.currency}{SUBSCRIPTION_PLAN.originalPrice.toLocaleString()}</span>
+            </div>
+            <div className="mt-2">
+              <span className="inline-block px-3 py-1 bg-green-600/20 text-green-400 rounded-full text-sm font-medium">
+                50%オフ
+              </span>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {SUBSCRIPTION_PLAN.description}
+          </p>
+        </div>
+      </div>
+
       {/* Terms and Conditions */}
       <div className="terms-section">
         <label className="terms-checkbox">
@@ -469,72 +473,51 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
             className="checkbox-input"
           />
           <span className="checkbox-text">
-            <a href="#" className="terms-link">利用規約</a>および<a href="#" className="terms-link">プライバシーポリシー</a>に同意し、キャンセルするまで{getPricingDisplay(selectedPlan)}の支払いに同意します。
+            <a href="#" className="terms-link">利用規約</a>と<a href="#" className="terms-link">プライバシーポリシー</a>に同意し、キャンセルまで支払いを続けることに同意します。
           </span>
         </label>
       </div>
 
-      {/* Apple Pay / Google Pay Button - Only show on iOS devices */}
-      {isIOSDevice && (
-        <div className="payment-section">
-          <h3 className="section-title">ApplePay</h3>
-          
-          {canMakePayment && paymentRequest ? (
-            <>
-              {!acceptTerms ? (
-                <div className="mb-4 p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
-                  <p className="text-sm text-yellow-500">
-                    ⚠️ Apple決済を使用するには、上記の利用規約に同意してください
-                  </p>
-                </div>
-              ) : (
-                <div className="mb-4">
-                  <PaymentRequestButtonElement 
-                    options={{ 
-                      paymentRequest,
-                      style: {
-                        paymentRequestButton: {
-                          type: 'default',
-                          theme: 'dark',
-                          height: '48px',
-                        },
-                      },
-                    }} 
-                  />
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="mb-4 p-3 bg-gray-800 rounded">
-              <p className="text-sm text-gray-400 mb-2">
-                Apple Pay は現在利用できません
-              </p>
-              <p className="text-xs text-gray-500 mb-2">
-                Stripe: {stripe ? '✓' : '✗'}, PaymentRequest: {paymentRequest ? '✓' : '✗'}, CanPay: {canMakePayment ? '✓' : '✗'}
-              </p>
-              <div className="text-xs text-gray-600">
-                <p className="mb-1">Apple Payを有効にするには:</p>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>StripeダッシュボードでApple Payを有効化</li>
-                  <li>ドメイン認証を完了 (eg-chatmate-ai.vercel.app)</li>
-                  <li>Safariブラウザでアクセス</li>
-                </ul>
+      {/* Apple Pay / Google Pay Button */}
+      {canMakePayment && paymentRequest && (
+        <>
+          <div className="payment-section">
+            <h3 className="section-title">クイック決済</h3>
+            
+            {!acceptTerms ? (
+              <div className="mb-4 p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
+                <p className="text-sm text-yellow-500">
+                  ⚠️ クイック決済を使用するには、上記の利用規約に同意してください
+                </p>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            ) : (
+              <div className="mb-4">
+                <PaymentRequestButtonElement 
+                  options={{ 
+                    paymentRequest,
+                    style: {
+                      paymentRequestButton: {
+                        type: 'default',
+                        theme: 'dark',
+                        height: '48px',
+                      },
+                    },
+                  }} 
+                />
+              </div>
+            )}
+          </div>
 
-      {/* Divider between Apple Pay and Card Information */}
-      {isIOSDevice && (
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-700"></div>
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-700"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-[rgb(var(--background))] text-muted-foreground">またはカードで支払う</span>
+            </div>
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-[rgb(var(--background))] text-muted-foreground">または</span>
-          </div>
-        </div>
+        </>
       )}
 
       {/* CARD INFORMATION Section */}
@@ -542,7 +525,7 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
         <h3 className="section-title">カード情報</h3>
         <div className="space-y-4">
           <div>
-            <label className="field-label">カードナンバー</label>
+            <label className="field-label">カード番号</label>
             <div className="card-element-container">
               <CardElement
                 options={{
@@ -596,12 +579,12 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="form-input"
-              placeholder="example@gmail.com"
+              placeholder="you@example.com"
               required
             />
           </div>
           <div>
-            <label className="field-label">お名前</label>
+            <label className="field-label">氏名</label>
               <input
               type="text"
               value={fullName}
@@ -614,14 +597,6 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
         </div>
       </div>
 
-      {/* Total Due Section */}
-      <div className="total-section">
-        <div className="flex justify-between items-center">
-          <span className="total-label">合計金額:</span>
-          <span className="total-amount">{getPricingDisplay(selectedPlan)}</span>
-        </div>
-      </div>
-
       {errorMessage && (
         <div className="error-message text-center" role="alert">
           {errorMessage}
@@ -629,20 +604,19 @@ function CheckoutForm({ selectedPlan, tenant, email: initialEmail }: { selectedP
       )}
 
       <button type="submit" disabled={!stripe || isProcessing || !acceptTerms} className="primary-button">
-        {isProcessing ? "処理中..." : "お支払い"}
+        {isProcessing ? "処理中..." : "今すぐ登録"}
       </button>
 
-      <p className="text-center text-sm text-muted-foreground">お支払いはStripeによって安全に処理されます。</p>
+      <p className="text-center text-sm text-muted-foreground">決済はStripeによって安全に処理されます。</p>
     </form>
   )
 }
 
 export default function SubscribePage() {
   const searchParams = useSearchParams()
-  const tenant = searchParams.get("tenant") || "ai-english"
+  const tenant = searchParams.get("tenant") || "stack"
 
   const [email, setEmail] = useState("")
-  const [selectedPlanId, setSelectedPlanId] = useState("")
 
   useEffect(() => {
     // Load email from sessionStorage
@@ -652,85 +626,33 @@ export default function SubscribePage() {
       setEmail(storedEmail)
       console.log("[SubscribePage] Email set to:", storedEmail)
     }
-
-    // Load last selected plan
-    const storedPlan = sessionStorage.getItem("selectedPlanId")
-    if (storedPlan) {
-      setSelectedPlanId(storedPlan)
-      // Don't auto-load payment form - only load when user clicks payment button
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handlePlanSelect = async (planId: string) => {
-    setSelectedPlanId(planId)
-    sessionStorage.setItem("selectedPlanId", planId)
-  }
+  }, [])
 
   return (
     <div className="form-container">
       <div className="min-h-screen flex items-center justify-center px-4 py-12 pt-20">
         <div className="w-full max-w-2xl">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2 text-balance">プラン選択</h1>
-            <p className="text-muted-foreground">サブスクのプランを選択してください</p>
+            <h1 className="text-3xl font-bold mb-2 text-balance">Stackサブスクリプション</h1>
+            <p className="text-muted-foreground">サブスクリプションを完了する</p>
           </div>
 
           <div className="space-y-8">
-            {/* Plan selector */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="step-number">1</span>
-                <h2 className="text-xl font-semibold">プラン選択</h2>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                {PLANS.map((plan) => (
-                  <button
-                    key={plan.planId}
-                    type="button"
-                    onClick={() => handlePlanSelect(plan.planId)}
-                    className={`plan-card text-left ${selectedPlanId === plan.planId ? "selected" : ""}`}
-                  >
-                    <div className="font-semibold text-lg mb-1">{plan.planName}</div>
-                    <div className="text-2xl font-bold mb-2" style={{ color: "var(--accent)" }}>
-                      {plan.publicLabel}
-                    </div>
-                    <div className="text-sm text-muted-foreground">{plan.description}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Payment Form */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="step-number">2</span>
-                <h2 className="text-xl font-semibold">お支払い</h2>
+            <ClientOnly fallback={
+              <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full border-4 border-gray-200 border-t-blue-600 animate-spin mb-4"></div>
+                <p className="text-muted-foreground">決済フォームを読み込んでいます...</p>
               </div>
-
-              {!selectedPlanId ? (
-                <div className="text-center text-muted-foreground py-8">
-                  お支払いを続行するには、上記からプランを選択してください
-                </div>
-              ) : (
-                <ClientOnly fallback={
-                  <div className="text-center py-8">
-                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full border-4 border-gray-200 border-t-blue-600 animate-spin mb-4"></div>
-                    <p className="text-muted-foreground">お支払いフォームを読み込み中...</p>
-                  </div>
-                }>
-                  <PaymentForm 
-                      selectedPlan={selectedPlanId}
-                    tenant={tenant}
-                    email={email}
-                    />
-                </ClientOnly>
-              )}
-            </div>
+            }>
+              <PaymentForm 
+                tenant={tenant}
+                email={email}
+              />
+            </ClientOnly>
           </div>
         </div>
       </div>
-
     </div>
   )
 }
