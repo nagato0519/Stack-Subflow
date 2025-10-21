@@ -45,10 +45,10 @@ Open your `.env.local` file and add these **two lines**:
 
 ```env
 EMAIL_SENDER=contact@stack-community.org
-EMAIL_PASSWORD=xtytbokcvsxgewiq
+EMAIL_PASSWORD=gljjgeybuyuubypn
 ```
 
-**⚠️ Critical**: Password must have **NO SPACES**: `xtytbokcvsxgewiq`
+**⚠️ Critical**: Password must have **NO SPACES**: `gljjgeybuyuubypn`
 
 ### Step 2: Test Your Setup
 
@@ -255,7 +255,7 @@ The test script will tell you exactly what's wrong.
    - Restart server
 
 2. **"Authentication failed"**
-   - Remove spaces from password: `xtytbokcvsxgewiq`
+   - Remove spaces from password: `gljjgeybuyuubypn`
    - Make sure 2-Step Verification is enabled on Gmail
 
 3. **"Email goes to spam"**
@@ -296,7 +296,7 @@ Modify the HTML template to include:
 2. Settings → Environment Variables
 3. Add:
    - `EMAIL_SENDER` = `contact@stack-community.org`
-   - `EMAIL_PASSWORD` = `xtytbokcvsxgewiq`
+   - `EMAIL_PASSWORD` = `gljjgeybuyuubypn`
 4. Redeploy
 
 ### For Other Platforms:

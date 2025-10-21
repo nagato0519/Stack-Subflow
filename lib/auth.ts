@@ -12,7 +12,8 @@ import {
   setDoc, 
   getDoc,
   updateDoc,
-  serverTimestamp 
+  serverTimestamp,
+  Timestamp 
 } from 'firebase/firestore'
 import { auth, db } from './firebase'
 
@@ -125,13 +126,22 @@ export const authService = {
   // Cancel user subscription
   async cancelSubscription(uid: string): Promise<void> {
     try {
-      // Call the API route to cancel the Stripe subscription and update Firestore
+      // Get user data to retrieve email and stripeCustomerId
+      const userData = await this.getUserData(uid)
+      if (!userData) {
+        throw new Error('User data not found')
+      }
+
+      // Call the API route to cancel the Stripe subscription
       const response = await fetch('/api/subscriptions/cancel', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId: uid }),
+        body: JSON.stringify({ 
+          email: userData.email,
+          stripeCustomerId: userData.stripeCustomerId 
+        }),
       })
 
       if (!response.ok) {
@@ -140,7 +150,28 @@ export const authService = {
       }
 
       const result = await response.json()
-      console.log('Subscription canceled successfully:', result)
+      console.log('Subscription canceled in Stripe:', result)
+
+      // Update Firestore with client SDK (user is authenticated)
+      const updateData: any = {
+        role: 'canceled',
+        updatedAt: serverTimestamp()
+      }
+
+      // Add expireDate if returned from API
+      if (result.expireDate) {
+        updateData.expireDate = Timestamp.fromDate(new Date(result.expireDate))
+      }
+
+      // Add stripeCustomerId if returned (in case it wasn't stored before)
+      if (result.stripeCustomerId && !userData.stripeCustomerId) {
+        updateData.stripeCustomerId = result.stripeCustomerId
+      }
+
+      // Update the user document in Firestore
+      await updateDoc(doc(db, 'users', uid), updateData)
+      
+      console.log('User document updated successfully')
     } catch (error) {
       console.error('Error canceling subscription:', error)
       throw error

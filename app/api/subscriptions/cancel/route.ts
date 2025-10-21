@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { doc, updateDoc, serverTimestamp, getDoc, Timestamp } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -12,72 +10,41 @@ export async function POST(request: NextRequest) {
   console.log('Cancel API: POST request received at:', new Date().toISOString())
   
   try {
-    // Parse request body
-    const { userId } = await request.json()
+    // Parse request body - now accepting email and stripeCustomerId from client
+    const { email, stripeCustomerId } = await request.json()
     
-    if (!userId) {
-      console.error('Cancel API: Missing userId')
+    if (!email) {
+      console.error('Cancel API: Missing email')
       return NextResponse.json(
-        { error: 'User ID is required' },
+        { error: 'Email is required' },
         { status: 400 }
       )
     }
 
-    console.log('Cancel API: Processing cancellation for user:', userId)
+    console.log('Cancel API: Processing cancellation for email:', email)
 
-    // Get user data from Firestore to retrieve stripeCustomerId
-    const userDocRef = doc(db, 'users', userId)
-    const userDoc = await getDoc(userDocRef)
+    // Find Stripe customer by email or use provided stripeCustomerId
+    let customerId = stripeCustomerId
 
-    if (!userDoc.exists()) {
-      console.error('Cancel API: User document not found')
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
-    }
-
-    const userData = userDoc.data()
-    let stripeCustomerId = userData.stripeCustomerId
-
-    // If no stripeCustomerId in Firestore, try to find customer by email
-    if (!stripeCustomerId) {
-      console.log('Cancel API: No stripeCustomerId in Firestore, searching by email:', userData.email)
+    if (!customerId) {
+      console.log('Cancel API: No stripeCustomerId provided, searching by email')
       
-      if (!userData.email) {
-        console.error('Cancel API: No email found for user')
-        return NextResponse.json(
-          { error: 'No email address found for user' },
-          { status: 400 }
-        )
-      }
-
       try {
         const existingCustomers = await stripe.customers.list({
-          email: userData.email,
+          email: email,
           limit: 1
         })
 
         if (existingCustomers.data.length > 0) {
-          stripeCustomerId = existingCustomers.data[0].id
-          console.log('Cancel API: Found Stripe customer by email:', stripeCustomerId)
-          
-          // Update Firestore with the found stripeCustomerId for future use
-          await updateDoc(userDocRef, {
-            stripeCustomerId: stripeCustomerId
-          })
-          console.log('Cancel API: Updated Firestore with stripeCustomerId')
+          customerId = existingCustomers.data[0].id
+          console.log('Cancel API: Found Stripe customer by email:', customerId)
         } else {
-          console.log('Cancel API: No Stripe customer found for email:', userData.email)
-          // No Stripe customer exists, just update Firestore role to canceled
-          await updateDoc(userDocRef, {
-            role: 'canceled',
-            updatedAt: serverTimestamp()
-          })
-          
+          console.log('Cancel API: No Stripe customer found for email:', email)
+          // No Stripe customer exists, return success with no expireDate
           return NextResponse.json({
             success: true,
-            message: 'Account role updated to canceled (no active subscription found)'
+            noSubscription: true,
+            message: 'No active subscription found'
           })
         }
       } catch (searchError) {
@@ -89,11 +56,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('Cancel API: Using Stripe customer ID:', stripeCustomerId)
+    console.log('Cancel API: Using Stripe customer ID:', customerId)
 
     // Retrieve all active subscriptions for this customer
     const subscriptions = await stripe.subscriptions.list({
-      customer: stripeCustomerId,
+      customer: customerId,
       status: 'active',
     })
 
@@ -121,25 +88,15 @@ export async function POST(request: NextRequest) {
       canceledSubscriptions.push(canceled.id)
     }
 
-    // Update user document role to 'canceled' and add expireDate
-    const updateData: any = {
-      role: 'canceled',
-      updatedAt: serverTimestamp()
-    }
-    
-    if (expireDate) {
-      updateData.expireDate = Timestamp.fromDate(expireDate)
-      console.log('Cancel API: Setting expireDate to:', expireDate.toISOString())
-    }
-    
-    await updateDoc(userDocRef, updateData)
+    console.log('Cancel API: Successfully canceled subscriptions in Stripe')
 
-    console.log('Cancel API: Successfully canceled subscriptions and updated user status')
-
+    // Return the expireDate to the client so they can update Firestore
     return NextResponse.json({
       success: true,
       message: 'Subscription canceled successfully',
-      canceledSubscriptions: canceledSubscriptions
+      canceledSubscriptions: canceledSubscriptions,
+      expireDate: expireDate ? expireDate.toISOString() : null,
+      stripeCustomerId: customerId
     })
 
   } catch (error: any) {

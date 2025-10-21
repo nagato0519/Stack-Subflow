@@ -46,12 +46,12 @@ STEP 1: Edit .env.local
   Add these two lines at the end:
 
     EMAIL_SENDER=contact@stack-community.org
-    EMAIL_PASSWORD=xtytbokcvsxgewiq
+    EMAIL_PASSWORD=gljjgeybuyuubypn
 
   ⚠️  IMPORTANT: Password must have NO SPACES!
   
-  ❌ WRONG: xtyt bokc vsxg ewiq
-  ✅ RIGHT: xtytbokcvsxgewiq
+  ❌ WRONG: gljj geyb uyuu bypn
+  ✅ RIGHT: gljjgeybuyuubypn
 
 
 STEP 2: Test Email Setup
@@ -90,10 +90,10 @@ STEP 4: Test Full Flow
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Sender Email:  contact@stack-community.org
-  App Password:  xtytbokcvsxgewiq
+  App Password:  gljjgeybuyuubypn
 
-  Original (with spaces): xtyt bokc vsxg ewiq
-  Use this (no spaces):   xtytbokcvsxgewiq
+  Original (with spaces): gljj geyb uyuu bypn
+  Use this (no spaces):   gljjgeybuyuubypn
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -147,7 +147,7 @@ STEP 4: Test Full Flow
 
   ❌ Test script fails?
      → Check .env.local has EMAIL_SENDER and EMAIL_PASSWORD
-     → Make sure password has no spaces
+     → Make sure password has no spaces: gljjgeybuyuubypn
      → Restart terminal/server
 
   ❌ Email not sending?
@@ -168,7 +168,7 @@ STEP 4: Test Full Flow
     1. Go to project settings
     2. Environment Variables → Add New
     3. Add EMAIL_SENDER = contact@stack-community.org
-    4. Add EMAIL_PASSWORD = xtytbokcvsxgewiq
+    4. Add EMAIL_PASSWORD = gljjgeybuyuubypn
     5. Redeploy
 
   For other platforms:

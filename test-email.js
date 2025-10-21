@@ -24,7 +24,7 @@ if (!emailSender || !emailPassword) {
   console.error('❌ Missing environment variables!');
   console.log('Required in .env.local:');
   console.log('  EMAIL_SENDER=contact@stack-community.org');
-  console.log('  EMAIL_PASSWORD=xtytbokcvsxgewiq');
+  console.log('  EMAIL_PASSWORD=gljjgeybuyuubypn');
   process.exit(1);
 }
 
@@ -208,7 +208,7 @@ transporter.sendMail({
   console.error('Error:', error.message);
   console.error('');
   console.error('Common issues:');
-  console.error('  1. Password has spaces - should be: xtytbokcvsxgewiq (no spaces)');
+  console.error('  1. Password has spaces - should be: gljjgeybuyuubypn (no spaces)');
   console.error('  2. Wrong email address');
   console.error('  3. 2-Step Verification not enabled on Gmail');
   console.error('  4. App Password is incorrect or revoked');

@@ -41,11 +41,11 @@ Open your `.env.local` file and add these two lines:
 
 ```env
 EMAIL_SENDER=contact@stack-community.org
-EMAIL_PASSWORD=xtytbokcvsxgewiq
+EMAIL_PASSWORD=gljjgeybuyuubypn
 ```
 
 **⚠️ IMPORTANT:**
-- Password must have **NO SPACES**: `xtytbokcvsxgewiq`
+- Password must have **NO SPACES**: `gljjgeybuyuubypn`
 - Do NOT add quotes around the values
 - Make sure these go AFTER your existing variables
 
@@ -63,7 +63,7 @@ STRIPE_SECRET_KEY=...
 
 # Gmail Config (ADD THESE)
 EMAIL_SENDER=contact@stack-community.org
-EMAIL_PASSWORD=xtytbokcvsxgewiq
+EMAIL_PASSWORD=gljjgeybuyuubypn
 ```
 
 ### Step 2: Test the Email Setup
@@ -240,7 +240,7 @@ If something goes wrong:
 **Problem**: Gmail authentication issue
 
 **Solution**:
-1. Remove spaces from password: `xtytbokcvsxgewiq`
+1. Remove spaces from password: `gljjgeybuyuubypn`
 2. Verify email: `contact@stack-community.org`
 3. Ensure 2-Step Verification is enabled on Gmail
 4. Try generating a new App Password
@@ -282,7 +282,7 @@ node test-email.js your@email.com
 3. Add:
    ```
    EMAIL_SENDER = contact@stack-community.org
-   EMAIL_PASSWORD = xtytbokcvsxgewiq
+   EMAIL_PASSWORD = gljjgeybuyuubypn
    ```
 4. Redeploy your app
 
@@ -339,7 +339,7 @@ Gmail is perfect for:
 ### Environment Variables
 ```env
 EMAIL_SENDER=contact@stack-community.org
-EMAIL_PASSWORD=xtytbokcvsxgewiq
+EMAIL_PASSWORD=gljjgeybuyuubypn
 ```
 
 ### Test Command
@@ -391,7 +391,7 @@ Body: { email, password }
 2. Add two lines:
    ```env
    EMAIL_SENDER=contact@stack-community.org
-   EMAIL_PASSWORD=xtytbokcvsxgewiq
+   EMAIL_PASSWORD=gljjgeybuyuubypn
    ```
 3. Run: `node test-email.js your@email.com`
 4. Restart: `npm run dev`

@@ -32,7 +32,7 @@ Add these two lines:
 
 ```env
 EMAIL_SENDER=contact@stack-community.org
-EMAIL_PASSWORD=xtytbokcvsxgewiq
+EMAIL_PASSWORD=gljjgeybuyuubypn
 ```
 
 ### 2. Test It
@@ -50,17 +50,17 @@ npm run dev
 ## 📋 Credentials
 
 **Email**: contact@stack-community.org  
-**Password**: xtytbokcvsxgewiq (no spaces!)
+**Password**: gljjgeybuyuubypn (no spaces!)
 
 ---
 
 ## 🚨 Common Mistakes
 
-❌ `EMAIL_PASSWORD=xtyt bokc vsxg ewiq` (has spaces)  
-✅ `EMAIL_PASSWORD=xtytbokcvsxgewiq` (no spaces)
+❌ `EMAIL_PASSWORD=gljj geyb uyuu bypn` (has spaces)  
+✅ `EMAIL_PASSWORD=gljjgeybuyuubypn` (no spaces)
 
-❌ `EMAIL_PASSWORD="xtytbokcvsxgewiq"` (has quotes)  
-✅ `EMAIL_PASSWORD=xtytbokcvsxgewiq` (no quotes)
+❌ `EMAIL_PASSWORD="gljjgeybuyuubypn"` (has quotes)  
+✅ `EMAIL_PASSWORD=gljjgeybuyuubypn` (no quotes)
 
 ---
 

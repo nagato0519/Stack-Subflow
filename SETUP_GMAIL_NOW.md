@@ -25,11 +25,11 @@ code .env.local
 
 ```env
 EMAIL_SENDER=contact@stack-community.org
-EMAIL_PASSWORD=xtytbokcvsxgewiq
+EMAIL_PASSWORD=gljjgeybuyuubypn
 ```
 
 **Important Notes:**
-- ⚠️ The password should have **NO SPACES**: `xtytbokcvsxgewiq` (not `xtyt bokc vsxg ewiq`)
+- ⚠️ The password should have **NO SPACES**: `gljjgeybuyuubypn` (not `gljj geyb uyuu bypn`)
 - ⚠️ Make sure there are no extra quotes or spaces around the values
 - ⚠️ Place these lines after your existing environment variables
 
@@ -96,7 +96,7 @@ Check the server console for errors. Common issues:
    - Make sure you restarted the dev server after editing `.env.local`
    
 2. **Authentication failed**
-   - Verify the password has no spaces: `xtytbokcvsxgewiq`
+   - Verify the password has no spaces: `gljjgeybuyuubypn`
    - Verify the email is correct: `contact@stack-community.org`
    - Make sure 2-Step Verification is enabled on this Gmail account
 
@@ -125,7 +125,7 @@ When deploying to Vercel or other platforms:
 1. Go to your project settings
 2. Add Environment Variables:
    - `EMAIL_SENDER` = `contact@stack-community.org`
-   - `EMAIL_PASSWORD` = `xtytbokcvsxgewiq`
+   - `EMAIL_PASSWORD` = `gljjgeybuyuubypn`
 3. Redeploy
 
 ## 📚 More Information
