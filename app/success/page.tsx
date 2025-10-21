@@ -8,8 +8,17 @@ export default function SuccessPage() {
   const [isCreatingAccount, setIsCreatingAccount] = useState(true)
   const [accountCreated, setAccountCreated] = useState(false)
   const [accountError, setAccountError] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
 
   useEffect(() => {
+    // Get login credentials before clearing
+    const storedEmail = sessionStorage.getItem("email") || ""
+    const storedPassword = sessionStorage.getItem("password") || ""
+    
+    setEmail(storedEmail)
+    setPassword(storedPassword)
+    
     // Account and Firestore document should already be created during payment
     // Just show success message
     setAccountCreated(true)
@@ -64,8 +73,32 @@ export default function SuccessPage() {
               </div>
               <h1 className="text-2xl font-semibold mb-3 text-white">Stackへようこそ！</h1>
               <p className="text-white/80 mb-6">
-                アカウントが作成され、サブスクリプションが有効になりました。メールアドレスとパスワードでStackにアクセスできます。
+                アカウントが作成され、サブスクリプションが有効になりました。以下の情報でStackにログインできます。
               </p>
+
+              {/* Login Credentials */}
+              {email && password && (
+                <div className="mb-6 p-6 bg-white/5 border border-white/10 rounded-lg text-left">
+                  <h2 className="text-lg font-semibold mb-4 text-white text-center">ログイン情報</h2>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm text-white/70 block mb-1">メールアドレス</label>
+                      <div className="bg-white/10 border border-white/20 rounded-lg p-3 font-mono text-white break-all">
+                        {email}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm text-white/70 block mb-1">パスワード</label>
+                      <div className="bg-white/10 border border-white/20 rounded-lg p-3 font-mono text-white break-all">
+                        {password}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-yellow-400 mt-4 text-center">
+                    ⚠️ この情報を安全な場所に保存してください
+                  </p>
+                </div>
+              )}
               
               {/* App Store Download Link */}
               <div className="mt-8 space-y-4">

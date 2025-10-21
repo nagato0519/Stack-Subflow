@@ -108,7 +108,7 @@ export default function CancelPage() {
       await authService.cancelSubscription(user.uid)
       
       // Update local state
-      setUserData({ ...userData, status: 'canceled' })
+      setUserData({ ...userData, role: 'canceled' })
       setShowConfirmation(false)
       setCancelSuccess(true)
       
@@ -291,7 +291,7 @@ export default function CancelPage() {
   }
 
   // Check if subscription is already canceled
-  if (userData?.status === 'canceled') {
+  if (userData?.role === 'canceled') {
     return (
       <div className="form-container">
         <div className="min-h-screen flex items-center justify-center px-4 py-12">
@@ -331,8 +331,8 @@ export default function CancelPage() {
                   <span className="ml-2">{userData?.email}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">ステータス：</span>
-                  <span className="ml-2 capitalize">{userData?.status || 'アクティブ'}</span>
+                  <span className="text-muted-foreground">ロール：</span>
+                  <span className="ml-2 capitalize">{userData?.role || 'basic'}</span>
                 </div>
                 {userData?.stripeCustomerId && (
                   <div>

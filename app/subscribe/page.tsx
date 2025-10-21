@@ -230,6 +230,12 @@ function CheckoutForm({ tenant, email: initialEmail }: { tenant: string, email: 
           return
         }
         
+        if (!data.customerId) {
+          e.complete('fail')
+          setErrorMessage("顧客情報の取得に失敗しました。もう一度お試しください。")
+          return
+        }
+        
         const clientSecret = data.clientSecret
         const customerId = data.customerId
 
@@ -268,6 +274,22 @@ function CheckoutForm({ tenant, email: initialEmail }: { tenant: string, email: 
                 storedPassword,
                 customerId
               )
+
+              // Send welcome email
+              try {
+                await fetch('/api/send-welcome-email', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    email: storedEmail,
+                    password: storedPassword
+                  })
+                })
+                console.log("[CheckoutForm] Welcome email sent")
+              } catch (emailError) {
+                console.error("[CheckoutForm] Failed to send welcome email:", emailError)
+                // Don't block the flow if email fails
+              }
             }
             
             sessionStorage.removeItem("email")
@@ -369,6 +391,12 @@ function CheckoutForm({ tenant, email: initialEmail }: { tenant: string, email: 
         return
       }
       
+      if (!data.customerId) {
+        console.error("[CheckoutForm] Missing customerId in response:", data)
+        setErrorMessage("顧客情報の取得に失敗しました。もう一度お試しください。")
+        return
+      }
+      
       const clientSecret = data.clientSecret
       const customerId = data.customerId
 
@@ -419,6 +447,22 @@ function CheckoutForm({ tenant, email: initialEmail }: { tenant: string, email: 
             storedPassword,
             customerId
           )
+
+          // Send welcome email
+          try {
+            await fetch('/api/send-welcome-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: storedEmail,
+                password: storedPassword
+              })
+            })
+            console.log("[v0] Welcome email sent")
+          } catch (emailError) {
+            console.error("[v0] Failed to send welcome email:", emailError)
+            // Don't block the flow if email fails
+          }
           
           // Clear stored data
           sessionStorage.removeItem("email")

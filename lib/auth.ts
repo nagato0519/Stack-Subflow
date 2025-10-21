@@ -21,9 +21,8 @@ export interface UserData {
   id: string
   email: string
   password: string
-  stripeCustomerId?: string
-  status?: 'active' | 'canceled' | 'trial'
-  source?: string
+  stripeCustomerId: string
+  role: 'basic' | 'canceled'
   expireDate?: any // Firestore Timestamp - when subscription access expires
 }
 
@@ -40,15 +39,14 @@ export const authService = {
   },
 
   // Create user document in Firestore after successful payment
-  async createUserDocument(uid: string, email: string, password: string, stripeCustomerId?: string): Promise<void> {
+  async createUserDocument(uid: string, email: string, password: string, stripeCustomerId: string): Promise<void> {
     try {
       await setDoc(doc(db, 'users', uid), {
         id: uid,  // Same as document ID
         email,
         password,
-        status: 'active',
-        source: 'web',
-        ...(stripeCustomerId && { stripeCustomerId })
+        stripeCustomerId,
+        role: 'basic'
       })
     } catch (error) {
       throw error

@@ -38,17 +38,58 @@ export async function POST(request: NextRequest) {
     }
 
     const userData = userDoc.data()
-    const stripeCustomerId = userData.stripeCustomerId
+    let stripeCustomerId = userData.stripeCustomerId
 
+    // If no stripeCustomerId in Firestore, try to find customer by email
     if (!stripeCustomerId) {
-      console.error('Cancel API: No Stripe customer ID found for user')
-      return NextResponse.json(
-        { error: 'No Stripe customer ID found' },
-        { status: 400 }
-      )
+      console.log('Cancel API: No stripeCustomerId in Firestore, searching by email:', userData.email)
+      
+      if (!userData.email) {
+        console.error('Cancel API: No email found for user')
+        return NextResponse.json(
+          { error: 'No email address found for user' },
+          { status: 400 }
+        )
+      }
+
+      try {
+        const existingCustomers = await stripe.customers.list({
+          email: userData.email,
+          limit: 1
+        })
+
+        if (existingCustomers.data.length > 0) {
+          stripeCustomerId = existingCustomers.data[0].id
+          console.log('Cancel API: Found Stripe customer by email:', stripeCustomerId)
+          
+          // Update Firestore with the found stripeCustomerId for future use
+          await updateDoc(userDocRef, {
+            stripeCustomerId: stripeCustomerId
+          })
+          console.log('Cancel API: Updated Firestore with stripeCustomerId')
+        } else {
+          console.log('Cancel API: No Stripe customer found for email:', userData.email)
+          // No Stripe customer exists, just update Firestore role to canceled
+          await updateDoc(userDocRef, {
+            role: 'canceled',
+            updatedAt: serverTimestamp()
+          })
+          
+          return NextResponse.json({
+            success: true,
+            message: 'Account role updated to canceled (no active subscription found)'
+          })
+        }
+      } catch (searchError) {
+        console.error('Cancel API: Error searching for customer by email:', searchError)
+        return NextResponse.json(
+          { error: 'Failed to find customer in payment system' },
+          { status: 500 }
+        )
+      }
     }
 
-    console.log('Cancel API: Found Stripe customer ID:', stripeCustomerId)
+    console.log('Cancel API: Using Stripe customer ID:', stripeCustomerId)
 
     // Retrieve all active subscriptions for this customer
     const subscriptions = await stripe.subscriptions.list({
@@ -80,9 +121,9 @@ export async function POST(request: NextRequest) {
       canceledSubscriptions.push(canceled.id)
     }
 
-    // Update user document status to 'canceled' and add expireDate
+    // Update user document role to 'canceled' and add expireDate
     const updateData: any = {
-      status: 'canceled',
+      role: 'canceled',
       updatedAt: serverTimestamp()
     }
     
