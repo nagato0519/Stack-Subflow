@@ -517,7 +517,7 @@ function CheckoutForm({ tenant, email: initialEmail }: { tenant: string, email: 
             className="checkbox-input"
           />
           <span className="checkbox-text">
-            <a href="#" className="terms-link">利用規約</a>と<a href="#" className="terms-link">プライバシーポリシー</a>に同意し、キャンセルまで支払いを続けることに同意します。
+            <a href="https://nagato-mind.notion.site/293d0cf82957803a95a7f791a47afe3b?source=copy_link" target="_blank" rel="noopener noreferrer" className="terms-link">利用規約</a>と<a href="https://nagato-mind.notion.site/Privacy-Policy-293d0cf82957805d996ef97bcac31c68?source=copy_link" target="_blank" rel="noopener noreferrer" className="terms-link">プライバシーポリシー</a>に同意し、キャンセルまで支払いを続けることに同意します。
           </span>
         </label>
       </div>
